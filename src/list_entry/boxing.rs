@@ -175,3 +175,239 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use memoffset::offset_of;
+    use moveit::moveit;
+
+    enum MyList {}
+    impl IsDoublyLinkedList for MyList {}
+
+    #[derive(Default)]
+    #[repr(C)]
+    struct TestItem {
+        value: i32,
+        entry: ListEntry<Self, MyList>,
+    }
+
+    impl TestItem {
+        fn new(value: i32) -> Self {
+            Self {
+                value,
+                ..Default::default()
+            }
+        }
+    }
+
+    impl HasListEntry<MyList> for TestItem {
+        fn offset() -> usize {
+            offset_of!(TestItem, entry)
+        }
+    }
+
+    impl BoxedListEntry for TestItem {
+        type L = MyList;
+    }
+
+    #[test]
+    fn test_append() {
+        // Append two lists of equal size.
+        moveit! {
+            let mut list1 = BoxingListHead::<TestItem, MyList>::new();
+            let mut list2 = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list1.as_mut().push_back(TestItem::new(i));
+            list2.as_mut().push_back(TestItem::new(i));
+        }
+
+        list1.as_mut().append(list2.as_mut());
+
+        assert_eq!(list1.as_ref().len(), 20);
+        assert_eq!(list2.as_ref().len(), 0);
+
+        for (i, element) in (0..10).chain(0..10).zip(list1.as_ref().iter()) {
+            assert_eq!(i, element.value);
+        }
+
+        verify_all_links(list1.as_ref().inner());
+
+        // Append the final list to an empty list.
+        moveit! {
+            let mut list3 = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        list3.as_mut().append(list1.as_mut());
+
+        assert_eq!(list3.as_ref().len(), 20);
+        assert_eq!(list1.as_ref().len(), 0);
+
+        verify_all_links(list3.as_ref().inner());
+    }
+
+    #[test]
+    fn test_back_and_front() {
+        moveit! {
+            let mut list = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        for i in 0..=3 {
+            list.as_mut().push_back(TestItem::new(i));
+        }
+
+        assert_eq!(list.as_ref().back().unwrap().value, 3);
+        assert_eq!(list.as_mut().back_mut().unwrap().value, 3);
+        assert_eq!(list.as_ref().front().unwrap().value, 0);
+        assert_eq!(list.as_mut().front_mut().unwrap().value, 0);
+    }
+
+    #[test]
+    fn test_pop_back() {
+        moveit! {
+            let mut list = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list.as_mut().push_back(TestItem::new(i));
+        }
+
+        for i in (0..10).rev() {
+            let element = list.as_mut().pop_back().unwrap();
+            assert_eq!(i, element.value);
+            verify_all_links(list.as_ref().inner());
+        }
+
+        assert!(list.as_ref().is_empty());
+    }
+
+    #[test]
+    fn test_pop_front() {
+        moveit! {
+            let mut list = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list.as_mut().push_back(TestItem::new(i));
+        }
+
+        for i in 0..10 {
+            let element = list.as_mut().pop_front().unwrap();
+            assert_eq!(i, element.value);
+            verify_all_links(list.as_ref().inner());
+        }
+
+        assert!(list.as_ref().is_empty());
+    }
+
+    #[test]
+    fn test_push_back() {
+        moveit! {
+            let mut list = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list.as_mut().push_back(TestItem::new(i));
+        }
+
+        assert_eq!(list.as_ref().len(), 10);
+
+        for (i, element) in (0..10).zip(list.as_ref().iter()) {
+            assert_eq!(i, element.value);
+        }
+
+        verify_all_links(list.as_ref().inner());
+    }
+
+    #[test]
+    fn test_push_front() {
+        moveit! {
+            let mut list = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list.as_mut().push_front(TestItem::new(i));
+        }
+
+        assert_eq!(list.as_ref().len(), 10);
+
+        for (i, element) in (0..10).rev().zip(list.as_ref().iter()) {
+            assert_eq!(i, element.value);
+        }
+
+        verify_all_links(list.as_ref().inner());
+    }
+
+    #[test]
+    fn test_retain() {
+        moveit! {
+            let mut list = BoxingListHead::<TestItem, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list.as_mut().push_back(TestItem::new(i));
+        }
+
+        // Retain all even elements.
+        list.as_mut().retain(|element| element.value % 2 == 0);
+
+        assert_eq!(list.as_ref().len(), 5);
+
+        for (i, element) in (0..10).step_by(2).zip(list.as_ref().iter()) {
+            assert_eq!(i, element.value);
+        }
+
+        verify_all_links(list.as_ref().inner());
+    }
+
+    fn verify_all_links<E, L>(head: Pin<&ListHead<E, L>>)
+    where
+        E: HasListEntry<L>,
+        L: IsDoublyLinkedList,
+    {
+        let mut current;
+        let end = head.get_ref() as *const _ as usize as *mut ListEntry<E, L>;
+
+        // Traverse the list in forward direction and collect all entries.
+        current = head.flink;
+        let mut forward_entries = Vec::<*mut ListEntry<E, L>>::new();
+
+        while current != end {
+            if !forward_entries.is_empty() {
+                // Verify that the previous entry is referenced by this entry's `blink`.
+                unsafe {
+                    assert_eq!(*forward_entries.last().unwrap(), (*current).blink);
+                }
+            }
+
+            forward_entries.push(current);
+            current = unsafe { (*current).flink };
+        }
+
+        // Traverse the list in backward direction and collect all entries.
+        current = head.blink;
+        let mut backward_entries =
+            Vec::<*mut ListEntry<E, L>>::with_capacity(forward_entries.len());
+
+        while current != end {
+            if !backward_entries.is_empty() {
+                // Verify that the previous entry is referenced by this entry's `flink`.
+                unsafe {
+                    assert_eq!(*backward_entries.last().unwrap(), (*current).flink);
+                }
+            }
+
+            backward_entries.push(current);
+            current = unsafe { (*current).blink };
+        }
+
+        // Verify that `backward_entries` is the exact reverse of `forward_entries`.
+        assert_eq!(forward_entries.len(), backward_entries.len());
+
+        for (fe, be) in forward_entries.iter().zip(backward_entries.iter().rev()) {
+            assert_eq!(fe, be);
+        }
+    }
+}
