@@ -1,10 +1,4 @@
-[package]
-name = "nt-list"
-version = "0.1.0"
-authors = ["Colin Finck <colin@reactos.org>"]
-edition = "2021"
-license = "MIT OR Apache-2.0"
-
-[dependencies]
-memoffset = "0.6.5"
-moveit = "0.5.0"
+[workspace]
+members = [
+    "nt-list",
+]
