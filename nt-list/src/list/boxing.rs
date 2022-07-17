@@ -7,36 +7,36 @@ use core::pin::Pin;
 
 use moveit::{new, New};
 
-use super::base::{Iter, IterMut, ListEntry, ListHead};
-use super::traits::{BoxedListEntry, HasListEntry, IsDoublyLinkedList};
+use super::base::{Iter, IterMut, NtListEntry, NtListHead};
+use super::traits::{NtBoxedListElement, NtList, NtListElement};
 
-/// A variant of [`ListHead`] that boxes every element on insertion.
-/// This guarantees ownership and therefore all `BoxingListHead` functions can be used without
+/// A variant of [`NtListHead`] that boxes every element on insertion.
+/// This guarantees ownership and therefore all `NtBoxingListHead` functions can be used without
 /// resorting to `unsafe`.
 ///
-/// You need to implement the [`BoxedListEntry`] trait to designate a single list as the boxing one.
+/// You need to implement the [`NtBoxedListElement`] trait to designate a single list as the boxing one.
 /// This also establishes clear ownership when a single element is part of more than one list.
 #[repr(transparent)]
-pub struct BoxingListHead<E: BoxedListEntry<L = L> + HasListEntry<L>, L: IsDoublyLinkedList>(
-    ListHead<E, L>,
+pub struct NtBoxingListHead<E: NtBoxedListElement<L = L> + NtListElement<L>, L: NtList>(
+    NtListHead<E, L>,
 );
 
-impl<E, L> BoxingListHead<E, L>
+impl<E, L> NtBoxingListHead<E, L>
 where
-    E: BoxedListEntry<L = L> + HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtList,
 {
     /// This function substitutes `InitializeListHead` of the Windows NT API.
     pub fn new() -> impl New<Output = Self> {
         unsafe {
-            new::of(Self(ListHead {
+            new::of(Self(NtListHead {
                 flink: MaybeUninit::uninit().assume_init(),
                 blink: MaybeUninit::uninit().assume_init(),
                 pin: PhantomPinned,
             }))
             .with(|this| {
                 let this = this.get_unchecked_mut();
-                this.0.flink = this as *mut _ as usize as *mut ListEntry<E, L>;
+                this.0.flink = this as *mut _ as usize as *mut NtListEntry<E, L>;
                 this.0.blink = this.0.flink;
             })
         }
@@ -72,11 +72,11 @@ where
         unsafe { self.inner_mut().front_mut() }
     }
 
-    fn inner(self: Pin<&Self>) -> Pin<&ListHead<E, L>> {
+    fn inner(self: Pin<&Self>) -> Pin<&NtListHead<E, L>> {
         unsafe { Pin::new_unchecked(&self.get_ref().0) }
     }
 
-    fn inner_mut(self: Pin<&mut Self>) -> Pin<&mut ListHead<E, L>> {
+    fn inner_mut(self: Pin<&mut Self>) -> Pin<&mut NtListHead<E, L>> {
         unsafe { Pin::new_unchecked(&mut self.get_unchecked_mut().0) }
     }
 
@@ -147,7 +147,7 @@ where
     {
         for element in self.iter_mut() {
             if !f(element) {
-                let entry = ListHead::entry(element);
+                let entry = NtListHead::entry(element);
 
                 unsafe {
                     (*entry).remove();
@@ -158,10 +158,10 @@ where
     }
 }
 
-impl<E, L> Drop for BoxingListHead<E, L>
+impl<E, L> Drop for NtBoxingListHead<E, L>
 where
-    E: BoxedListEntry<L = L> + HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtList,
 {
     fn drop(&mut self) {
         let pinned = unsafe { Pin::new_unchecked(self) };
@@ -183,13 +183,13 @@ mod tests {
     use moveit::moveit;
 
     enum MyList {}
-    impl IsDoublyLinkedList for MyList {}
+    impl NtList for MyList {}
 
     #[derive(Default)]
     #[repr(C)]
     struct TestItem {
         value: i32,
-        entry: ListEntry<Self, MyList>,
+        entry: NtListEntry<Self, MyList>,
     }
 
     impl TestItem {
@@ -201,13 +201,13 @@ mod tests {
         }
     }
 
-    impl HasListEntry<MyList> for TestItem {
+    impl NtListElement<MyList> for TestItem {
         fn offset() -> usize {
             offset_of!(TestItem, entry)
         }
     }
 
-    impl BoxedListEntry for TestItem {
+    impl NtBoxedListElement for TestItem {
         type L = MyList;
     }
 
@@ -215,8 +215,8 @@ mod tests {
     fn test_append() {
         // Append two lists of equal size.
         moveit! {
-            let mut list1 = BoxingListHead::<TestItem, MyList>::new();
-            let mut list2 = BoxingListHead::<TestItem, MyList>::new();
+            let mut list1 = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list2 = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         for i in 0..10 {
@@ -237,7 +237,7 @@ mod tests {
 
         // Append the final list to an empty list.
         moveit! {
-            let mut list3 = BoxingListHead::<TestItem, MyList>::new();
+            let mut list3 = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         list3.as_mut().append(list1.as_mut());
@@ -251,7 +251,7 @@ mod tests {
     #[test]
     fn test_back_and_front() {
         moveit! {
-            let mut list = BoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         for i in 0..=3 {
@@ -267,7 +267,7 @@ mod tests {
     #[test]
     fn test_pop_back() {
         moveit! {
-            let mut list = BoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         for i in 0..10 {
@@ -286,7 +286,7 @@ mod tests {
     #[test]
     fn test_pop_front() {
         moveit! {
-            let mut list = BoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         for i in 0..10 {
@@ -305,7 +305,7 @@ mod tests {
     #[test]
     fn test_push_back() {
         moveit! {
-            let mut list = BoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         for i in 0..10 {
@@ -324,7 +324,7 @@ mod tests {
     #[test]
     fn test_push_front() {
         moveit! {
-            let mut list = BoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         for i in 0..10 {
@@ -343,7 +343,7 @@ mod tests {
     #[test]
     fn test_retain() {
         moveit! {
-            let mut list = BoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
         }
 
         for i in 0..10 {
@@ -362,17 +362,17 @@ mod tests {
         verify_all_links(list.as_ref().inner());
     }
 
-    fn verify_all_links<E, L>(head: Pin<&ListHead<E, L>>)
+    fn verify_all_links<E, L>(head: Pin<&NtListHead<E, L>>)
     where
-        E: HasListEntry<L>,
-        L: IsDoublyLinkedList,
+        E: NtListElement<L>,
+        L: NtList,
     {
         let mut current;
-        let end = head.get_ref() as *const _ as usize as *mut ListEntry<E, L>;
+        let end = head.get_ref() as *const _ as usize as *mut NtListEntry<E, L>;
 
         // Traverse the list in forward direction and collect all entries.
         current = head.flink;
-        let mut forward_entries = Vec::<*mut ListEntry<E, L>>::new();
+        let mut forward_entries = Vec::<*mut NtListEntry<E, L>>::new();
 
         while current != end {
             if !forward_entries.is_empty() {
@@ -389,7 +389,7 @@ mod tests {
         // Traverse the list in backward direction and collect all entries.
         current = head.blink;
         let mut backward_entries =
-            Vec::<*mut ListEntry<E, L>>::with_capacity(forward_entries.len());
+            Vec::<*mut NtListEntry<E, L>>::with_capacity(forward_entries.len());
 
         while current != end {
             if !backward_entries.is_empty() {

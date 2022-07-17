@@ -8,20 +8,20 @@ use core::pin::Pin;
 
 use moveit::{new, New};
 
-use super::traits::{HasListEntry, IsDoublyLinkedList};
+use super::traits::{NtList, NtListElement};
 
 /// This structure substitutes the `LIST_ENTRY` structure of the Windows NT API for the list header.
 #[repr(C)]
-pub struct ListHead<E: HasListEntry<L>, L: IsDoublyLinkedList> {
-    pub(crate) flink: *mut ListEntry<E, L>,
-    pub(crate) blink: *mut ListEntry<E, L>,
+pub struct NtListHead<E: NtListElement<L>, L: NtList> {
+    pub(crate) flink: *mut NtListEntry<E, L>,
+    pub(crate) blink: *mut NtListEntry<E, L>,
     pub(crate) pin: PhantomPinned,
 }
 
-impl<E, L> ListHead<E, L>
+impl<E, L> NtListHead<E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     pub fn new() -> impl New<Output = Self> {
         unsafe {
@@ -32,7 +32,7 @@ where
             })
             .with(|this| {
                 let this = this.get_unchecked_mut();
-                this.flink = this as *mut _ as usize as *mut ListEntry<E, L>;
+                this.flink = this as *mut _ as usize as *mut NtListEntry<E, L>;
                 this.blink = this.flink;
             })
         }
@@ -72,16 +72,16 @@ where
         self.retain(|_| false)
     }
 
-    /// Returns the "end marker element" (which is the address of our own `ListHead`, but interpreted as a `ListEntry` element address).
-    fn end_marker(self: Pin<&Self>) -> *mut ListEntry<E, L> {
-        self.get_ref() as *const _ as usize as *mut ListEntry<E, L>
+    /// Returns the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
+    fn end_marker(self: Pin<&Self>) -> *mut NtListEntry<E, L> {
+        self.get_ref() as *const _ as usize as *mut NtListEntry<E, L>
     }
 
-    /// Returns the [`ListEntry`] for the given element.
-    pub(crate) fn entry(element: &mut E) -> *mut ListEntry<E, L> {
+    /// Returns the [`NtListEntry`] for the given element.
+    pub(crate) fn entry(element: &mut E) -> *mut NtListEntry<E, L> {
         let element_address = element as *mut _ as usize;
         let entry_address = element_address + E::offset();
-        entry_address as *mut ListEntry<E, L>
+        entry_address as *mut NtListEntry<E, L>
     }
 
     pub unsafe fn front(self: Pin<&Self>) -> Option<&E> {
@@ -165,27 +165,27 @@ where
     }
 }
 
-pub struct Iter<'a, E: HasListEntry<L>, L: IsDoublyLinkedList> {
-    head: &'a ListHead<E, L>,
-    flink: *const ListEntry<E, L>,
-    blink: *const ListEntry<E, L>,
+pub struct Iter<'a, E: NtListElement<L>, L: NtList> {
+    head: &'a NtListHead<E, L>,
+    flink: *const NtListEntry<E, L>,
+    blink: *const NtListEntry<E, L>,
 }
 
 impl<'a, E, L> Iter<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     fn terminate(&mut self) {
-        self.flink = self.head as *const _ as usize as *const ListEntry<E, L>;
+        self.flink = self.head as *const _ as usize as *const NtListEntry<E, L>;
         self.blink = self.flink;
     }
 }
 
 impl<'a, E, L> Iterator for Iter<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     type Item = &'a E;
 
@@ -215,8 +215,8 @@ where
 
 impl<'a, E, L> DoubleEndedIterator for Iter<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     fn next_back(&mut self) -> Option<&'a E> {
         if self.blink as usize == self.head as *const _ as usize {
@@ -240,32 +240,32 @@ where
 
 impl<'a, E, L> FusedIterator for Iter<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
 }
 
-pub struct IterMut<'a, E: HasListEntry<L>, L: IsDoublyLinkedList> {
-    head: &'a mut ListHead<E, L>,
-    flink: *mut ListEntry<E, L>,
-    blink: *mut ListEntry<E, L>,
+pub struct IterMut<'a, E: NtListElement<L>, L: NtList> {
+    head: &'a mut NtListHead<E, L>,
+    flink: *mut NtListEntry<E, L>,
+    blink: *mut NtListEntry<E, L>,
 }
 
 impl<'a, E, L> IterMut<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     fn terminate(&mut self) {
-        self.flink = self.head as *const _ as usize as *mut ListEntry<E, L>;
+        self.flink = self.head as *const _ as usize as *mut NtListEntry<E, L>;
         self.blink = self.flink;
     }
 }
 
 impl<'a, E, L> Iterator for IterMut<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     type Item = &'a mut E;
 
@@ -295,8 +295,8 @@ where
 
 impl<'a, E, L> DoubleEndedIterator for IterMut<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     fn next_back(&mut self) -> Option<&'a mut E> {
         if self.blink as usize == self.head as *const _ as usize {
@@ -320,24 +320,24 @@ where
 
 impl<'a, E, L> FusedIterator for IterMut<'a, E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
 }
 
 /// This structure substitutes the `LIST_ENTRY` structure of the Windows NT API for actual list entries.
 #[derive(Debug)]
 #[repr(C)]
-pub struct ListEntry<E: HasListEntry<L>, L: IsDoublyLinkedList> {
-    pub(crate) flink: *mut ListEntry<E, L>,
-    pub(crate) blink: *mut ListEntry<E, L>,
+pub struct NtListEntry<E: NtListElement<L>, L: NtList> {
+    pub(crate) flink: *mut NtListEntry<E, L>,
+    pub(crate) blink: *mut NtListEntry<E, L>,
     pin: PhantomPinned,
 }
 
-impl<E, L> ListEntry<E, L>
+impl<E, L> NtListEntry<E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     pub fn new() -> Self {
         unsafe {
@@ -369,10 +369,10 @@ where
     }
 }
 
-impl<E, L> Default for ListEntry<E, L>
+impl<E, L> Default for NtListEntry<E, L>
 where
-    E: HasListEntry<L>,
-    L: IsDoublyLinkedList,
+    E: NtListElement<L>,
+    L: NtList,
 {
     fn default() -> Self {
         Self::new()
