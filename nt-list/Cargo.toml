@@ -8,3 +8,4 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 memoffset = "0.6.5"
 moveit = "0.5.0"
+nt-list_macros = { path = "../nt-list_macros" }

@@ -10,14 +10,34 @@
 /// To make all list functions insert and remove elements via the correct [`NtListEntry`] fields,
 /// lists need to be uniquely identified, and this is what the empty enum types are for.
 ///
+/// The easiest way to implement this trait is to use `derive`:
+///
+/// ```ignore
+/// #[derive(NtList)]
+/// enum MyList {}
+/// ```
+///
 /// [`NtListEntry`]: super::base::NtListEntry
 pub trait NtList {}
+pub use nt_list_macros::NtList;
 
 /// Designates a structure as a list element with a [`NtListEntry`] field of a particular
 /// NT doubly-linked list (identified via an empty enum that implements [`NtList`]).
 ///
 /// You can implement this trait multiple times for a structure if it is part of multiple
 /// lists (and therefore contains multiple [`NtListEntry`] fields).
+///
+/// The easiest way to implement this trait for all [`NtListEntry`] fields of a structure
+/// is to use `derive` on the structure:
+///
+/// ```ignore
+/// #[derive(NtListElement)]
+/// #[repr(C)]
+/// struct MyElement {
+///     entry: NtListEntry<Self, MyList>,
+///     value: i32,
+/// }
+/// ```
 ///
 /// [`NtListEntry`]: super::base::NtListEntry
 pub trait NtListElement<L: NtList> {
@@ -27,6 +47,7 @@ pub trait NtListElement<L: NtList> {
     /// [`NtListEntry`]: super::base::NtListEntry
     fn offset() -> usize;
 }
+pub use nt_list_macros::NtListElement;
 
 /// Enables [`NtBoxingListHead`] for a list element structure.
 ///
@@ -34,7 +55,21 @@ pub trait NtListElement<L: NtList> {
 /// and handle its memory allocation and deallocation.
 /// Therefore, `NtBoxedListElement` can only be implemented once per list element structure.
 ///
+/// The easiest way to implement this trait is to use the `#[boxed]` attribute for the appropriate
+/// [`NtListEntry`] field and use `derive` on the structure:
+///
+/// ```ignore
+/// #[derive(NtListElement)]
+/// #[repr(C)]
+/// struct MyElement {
+///     #[boxed]
+///     entry: NtListEntry<Self, MyList>,
+///     value: i32,
+/// }
+/// ```
+///
 /// [`NtBoxingListHead`]: super::boxing::NtBoxingListHead
+/// [`NtListEntry`]: super::base::NtListEntry
 pub trait NtBoxedListElement {
     type L: NtList;
 }
