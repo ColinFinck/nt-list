@@ -179,16 +179,16 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use memoffset::offset_of;
     use moveit::moveit;
 
+    #[derive(NtList)]
     enum MyList {}
-    impl NtList for MyList {}
 
-    #[derive(Default)]
+    #[derive(Default, NtListElement)]
     #[repr(C)]
     struct TestItem {
         value: i32,
+        #[boxed]
         entry: NtListEntry<Self, MyList>,
     }
 
@@ -199,16 +199,6 @@ mod tests {
                 ..Default::default()
             }
         }
-    }
-
-    impl NtListElement<MyList> for TestItem {
-        fn offset() -> usize {
-            offset_of!(TestItem, entry)
-        }
-    }
-
-    impl NtBoxedListElement for TestItem {
-        type L = MyList;
     }
 
     #[test]
