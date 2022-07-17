@@ -186,13 +186,13 @@ mod tests {
 
     #[derive(Default, NtListElement)]
     #[repr(C)]
-    struct TestItem {
+    struct MyElement {
         value: i32,
         #[boxed]
         entry: NtListEntry<Self, MyList>,
     }
 
-    impl TestItem {
+    impl MyElement {
         fn new(value: i32) -> Self {
             Self {
                 value,
@@ -205,13 +205,13 @@ mod tests {
     fn test_append() {
         // Append two lists of equal size.
         moveit! {
-            let mut list1 = NtBoxingListHead::<TestItem, MyList>::new();
-            let mut list2 = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list1 = NtBoxingListHead::<MyElement, MyList>::new();
+            let mut list2 = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         for i in 0..10 {
-            list1.as_mut().push_back(TestItem::new(i));
-            list2.as_mut().push_back(TestItem::new(i));
+            list1.as_mut().push_back(MyElement::new(i));
+            list2.as_mut().push_back(MyElement::new(i));
         }
 
         list1.as_mut().append(list2.as_mut());
@@ -227,7 +227,7 @@ mod tests {
 
         // Append the final list to an empty list.
         moveit! {
-            let mut list3 = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list3 = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         list3.as_mut().append(list1.as_mut());
@@ -241,11 +241,11 @@ mod tests {
     #[test]
     fn test_back_and_front() {
         moveit! {
-            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         for i in 0..=3 {
-            list.as_mut().push_back(TestItem::new(i));
+            list.as_mut().push_back(MyElement::new(i));
         }
 
         assert_eq!(list.as_ref().back().unwrap().value, 3);
@@ -257,11 +257,11 @@ mod tests {
     #[test]
     fn test_pop_back() {
         moveit! {
-            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         for i in 0..10 {
-            list.as_mut().push_back(TestItem::new(i));
+            list.as_mut().push_back(MyElement::new(i));
         }
 
         for i in (0..10).rev() {
@@ -276,11 +276,11 @@ mod tests {
     #[test]
     fn test_pop_front() {
         moveit! {
-            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         for i in 0..10 {
-            list.as_mut().push_back(TestItem::new(i));
+            list.as_mut().push_back(MyElement::new(i));
         }
 
         for i in 0..10 {
@@ -295,11 +295,11 @@ mod tests {
     #[test]
     fn test_push_back() {
         moveit! {
-            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         for i in 0..10 {
-            list.as_mut().push_back(TestItem::new(i));
+            list.as_mut().push_back(MyElement::new(i));
         }
 
         assert_eq!(list.as_ref().len(), 10);
@@ -314,11 +314,11 @@ mod tests {
     #[test]
     fn test_push_front() {
         moveit! {
-            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         for i in 0..10 {
-            list.as_mut().push_front(TestItem::new(i));
+            list.as_mut().push_front(MyElement::new(i));
         }
 
         assert_eq!(list.as_ref().len(), 10);
@@ -333,11 +333,11 @@ mod tests {
     #[test]
     fn test_retain() {
         moveit! {
-            let mut list = NtBoxingListHead::<TestItem, MyList>::new();
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
         }
 
         for i in 0..10 {
-            list.as_mut().push_back(TestItem::new(i));
+            list.as_mut().push_back(MyElement::new(i));
         }
 
         // Retain all even elements.
