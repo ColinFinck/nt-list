@@ -12,7 +12,7 @@ use syn::{
 ///
 /// Example parameters for the doubly-linked list:
 /// * trait_name: "NtList"
-/// * trait_path: quote! {crate::list::traits::NtList}
+/// * trait_path: quote! {::nt_list::list::traits::NtList}
 pub(crate) fn derive_list_enum_trait(
     input: DeriveInput,
     trait_name: &str,
@@ -38,9 +38,9 @@ pub(crate) fn derive_list_enum_trait(
 ///
 /// Example parameters for the doubly-linked list:
 /// * trait_name: "NtListElement"
-/// * trait_path: quote! {crate::list::traits::NtListElement}
+/// * trait_path: quote! {::nt_list::list::traits::NtListElement}
 /// * field_ty_name: "NtListEntry"
-/// * boxed_trait_path: quote! {crate::list::traits::NtBoxedListElement}
+/// * boxed_trait_path: quote! {::nt_list::list::traits::NtBoxedListElement}
 pub fn derive_list_struct_trait(
     input: DeriveInput,
     trait_name: &str,
