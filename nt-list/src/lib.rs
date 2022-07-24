@@ -6,3 +6,6 @@
 extern crate self as nt_list;
 
 pub mod list;
+mod traits;
+
+pub use traits::*;

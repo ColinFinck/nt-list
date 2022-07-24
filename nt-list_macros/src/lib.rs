@@ -10,7 +10,7 @@ use syn::{parse_macro_input, DeriveInput};
 #[proc_macro_derive(NtList)]
 pub fn derive_nt_list(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    helpers::derive_list_enum_trait(input, "NtList", quote! {::nt_list::list::traits::NtList})
+    helpers::derive_list_enum_trait(input, "NtList", quote! {::nt_list::list::NtList})
         .unwrap_or_else(|e| e.to_compile_error())
         .into()
 }
@@ -18,12 +18,18 @@ pub fn derive_nt_list(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(NtListElement, attributes(boxed))]
 pub fn derive_nt_list_element(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
-    helpers::derive_list_struct_trait(
+    helpers::derive_list_struct_trait(input)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
+
+#[proc_macro_derive(NtSingleList)]
+pub fn derive_nt_single_list(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    helpers::derive_list_enum_trait(
         input,
-        "NtListElement",
-        quote! {::nt_list::list::traits::NtListElement},
-        "NtListEntry",
-        quote! {::nt_list::list::traits::NtBoxedListElement},
+        "NtSingleList",
+        quote! {::nt_list::single_list::NtSingleList},
     )
     .unwrap_or_else(|e| e.to_compile_error())
     .into()

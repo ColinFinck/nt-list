@@ -8,7 +8,8 @@ use core::pin::Pin;
 use moveit::{new, New};
 
 use super::base::{Iter, IterMut, NtListEntry, NtListHead};
-use super::traits::{NtBoxedListElement, NtList, NtListElement};
+use super::traits::NtList;
+use crate::traits::{NtBoxedListElement, NtListElement, NtListOfType};
 
 /// A variant of [`NtListHead`] that boxes every element on insertion.
 /// This guarantees ownership and therefore all `NtBoxingListHead` functions can be used without
@@ -17,14 +18,15 @@ use super::traits::{NtBoxedListElement, NtList, NtListElement};
 /// You need to implement the [`NtBoxedListElement`] trait to designate a single list as the boxing one.
 /// This also establishes clear ownership when a single element is part of more than one list.
 #[repr(transparent)]
-pub struct NtBoxingListHead<E: NtBoxedListElement<L = L> + NtListElement<L>, L: NtList>(
-    NtListHead<E, L>,
-);
+pub struct NtBoxingListHead<
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtListOfType<T = NtList>,
+>(NtListHead<E, L>);
 
 impl<E, L> NtBoxingListHead<E, L>
 where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtList,
+    L: NtListOfType<T = NtList>,
 {
     /// This function substitutes `InitializeListHead` of the Windows NT API.
     pub fn new() -> impl New<Output = Self> {
@@ -161,7 +163,7 @@ where
 impl<E, L> Drop for NtBoxingListHead<E, L>
 where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtList,
+    L: NtListOfType<T = NtList>,
 {
     fn drop(&mut self) {
         let pinned = unsafe { Pin::new_unchecked(self) };
@@ -355,7 +357,7 @@ mod tests {
     fn verify_all_links<E, L>(head: Pin<&NtListHead<E, L>>)
     where
         E: NtListElement<L>,
-        L: NtList,
+        L: NtListOfType<T = NtList>,
     {
         let mut current;
         let end = head.get_ref() as *const _ as usize as *mut NtListEntry<E, L>;

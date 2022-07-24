@@ -15,45 +15,35 @@ use syn::{
 /// * trait_path: quote! {::nt_list::list::traits::NtList}
 pub(crate) fn derive_list_enum_trait(
     input: DeriveInput,
-    trait_name: &str,
-    trait_path: TokenStream,
+    list_type_name: &str,
+    list_type_path: TokenStream,
 ) -> Result<TokenStream> {
     if let Data::Enum(e) = &input.data {
         if e.variants.is_empty() {
             let ident = &input.ident;
 
             return Ok(quote! {
-                impl #trait_path for #ident {}
+                impl ::nt_list::NtListOfType for #ident {
+                    type T = #list_type_path;
+                }
             });
         }
     }
 
     Err(Error::new_spanned(
         input,
-        format!("{} can only be derived for an empty enum", trait_name),
+        format!("{} can only be derived for an empty enum", list_type_name),
     ))
 }
 
-/// Helper function to derive the trait that designates a structure as a list element.
-///
-/// Example parameters for the doubly-linked list:
-/// * trait_name: "NtListElement"
-/// * trait_path: quote! {::nt_list::list::traits::NtListElement}
-/// * field_ty_name: "NtListEntry"
-/// * boxed_trait_path: quote! {::nt_list::list::traits::NtBoxedListElement}
-pub fn derive_list_struct_trait(
-    input: DeriveInput,
-    trait_name: &str,
-    trait_path: TokenStream,
-    field_ty_name: &str,
-    boxed_trait_path: TokenStream,
-) -> Result<TokenStream> {
+/// Helper function to derive NtListElement.
+pub fn derive_list_struct_trait(input: DeriveInput) -> Result<TokenStream> {
     let s = match &input.data {
         Data::Struct(s) => s,
         _ => {
             return Err(Error::new_spanned(
                 input,
-                format!("{} can only be derived for structs", trait_name),
+                "NtListElement can only be derived for structs",
             ))
         }
     };
@@ -63,10 +53,7 @@ pub fn derive_list_struct_trait(
         _ => {
             return Err(Error::new_spanned(
                 input,
-                format!(
-                    "{} can only be derived for structs with named fields",
-                    trait_name
-                ),
+                "NtListElement can only be derived for structs with named fields",
             ))
         }
     };
@@ -75,7 +62,7 @@ pub fn derive_list_struct_trait(
     let ident = &input.ident;
 
     let tokens = f.named.iter().filter_map(|field| {
-        parse_element_field(field, field_ty_name).map(|info| {
+        parse_element_field(field).map(|info| {
             let field_ident = info.ident;
             let list_ty = info.list_ty;
             boxed_attrs += info.is_boxed as usize;
@@ -83,14 +70,14 @@ pub fn derive_list_struct_trait(
             let mut boxed_impl = TokenStream::new();
             if info.is_boxed {
                 boxed_impl = quote! {
-                    impl #boxed_trait_path for #ident {
+                    impl ::nt_list::NtBoxedListElement for #ident {
                         type L = #list_ty;
                     }
                 };
             }
 
             quote! {
-                impl #trait_path<#list_ty> for #ident {
+                impl ::nt_list::NtListElement<#list_ty> for #ident {
                     fn offset() -> usize {
                         let base = ::core::mem::MaybeUninit::<#ident>::uninit();
                         let base_ptr = base.as_ptr();
@@ -110,17 +97,14 @@ pub fn derive_list_struct_trait(
     if output.is_empty() {
         return Err(Error::new_spanned(
             input,
-            format!("Found no {} fields", field_ty_name),
+            "Found no NtListEntry/NtSingleListEntry fields",
         ));
     }
 
     if boxed_attrs > 1 {
         return Err(Error::new_spanned(
             input,
-            format!(
-                "Only a single {} field may have a #[boxed] attribute",
-                field_ty_name
-            ),
+            "Only a single entry field may have a #[boxed] attribute",
         ));
     }
 
@@ -142,10 +126,9 @@ pub(crate) struct ElementFieldInfo<'a> {
 /// `field` can be the syntax tree of e.g.
 /// * `entry: NtListEntry<Self, MyList>`
 /// * `entry: nt_list::list::base::NtListEntry<Self, mytraits::MyList>`
-pub(crate) fn parse_element_field<'a>(
-    field: &'a Field,
-    ty_name: &str,
-) -> Option<ElementFieldInfo<'a>> {
+pub(crate) fn parse_element_field<'a>(field: &'a Field) -> Option<ElementFieldInfo<'a>> {
+    const SUPPORTED_TYPES: &[&str] = &["NtListEntry"];
+
     let ident = &field.ident.as_ref()?;
     let is_boxed = field
         .attrs
@@ -162,7 +145,7 @@ pub(crate) fn parse_element_field<'a>(
     };
 
     let segment = ty_path.path.segments.last()?;
-    if segment.ident != ty_name {
+    if !SUPPORTED_TYPES.iter().any(|x| segment.ident == x) {
         return None;
     }
 
