@@ -10,11 +10,19 @@ use super::traits::NtSingleList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
 /// A variant of [`NtSingleListHead`] that boxes every element on insertion.
+///
 /// This guarantees ownership and therefore all `NtBoxingSingleListHead` functions can be used without
 /// resorting to `unsafe`.
+/// If you can, use this implementation over [`NtSingleListHead`].
 ///
 /// You need to implement the [`NtBoxedListElement`] trait to designate a single list as the boxing one.
 /// This also establishes clear ownership when a single element is part of more than one list.
+///
+/// See the [module-level documentation](crate::single_list) for more details.
+///
+/// This structure substitutes the [`SINGLE_LIST_ENTRY`] structure of the Windows NT API for the list header.
+///
+/// [`SINGLE_LIST_ENTRY`]: https://docs.microsoft.com/en-us/windows/win32/api/ntdef/ns-ntdef-single_list_entry
 #[repr(transparent)]
 pub struct NtBoxingSingleListHead<
     E: NtBoxedListElement<L = L> + NtListElement<L>,
@@ -26,11 +34,15 @@ where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
     L: NtTypedList<T = NtSingleList>,
 {
+    /// Creates a new singly linked list that owns all elements.
     pub fn new() -> Self {
         Self(NtSingleListHead::<E, L>::new())
     }
 
-    /// This operation computes in *O*(*n*) time.
+    /// Removes all elements from the list, deallocating their memory.
+    ///
+    /// Unlike [`NtSingleListHead::clear`], this operation computes in *O*(*n*) time, because it
+    /// needs to traverse all elements to deallocate them.
     pub fn clear(&mut self) {
         for element in self.iter_mut() {
             unsafe {
@@ -41,49 +53,73 @@ where
         self.0.clear();
     }
 
+    /// Provides a reference to the first element, or `None` if the list is empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn front(&self) -> Option<&E> {
         unsafe { self.0.front() }
     }
 
+    /// Provides a mutable reference to the first element, or `None` if the list is empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn front_mut(&mut self) -> Option<&mut E> {
         unsafe { self.0.front_mut() }
     }
 
+    /// Returns `true` if the list is empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    /// Returns an iterator yielding references to each element of the list.
     pub fn iter(&self) -> Iter<E, L> {
         unsafe { self.0.iter() }
     }
 
+    /// Returns an iterator yielding mutable references to each element of the list.
     pub fn iter_mut(&mut self) -> IterMut<E, L> {
         unsafe { self.0.iter_mut() }
     }
 
+    /// Counts all elements and returns the length of the list.
+    ///
     /// This operation computes in *O*(*n*) time.
     pub fn len(&self) -> usize {
         unsafe { self.0.len() }
     }
 
-    /// This function substitutes `PopEntryList` of the Windows NT API.
+    /// Removes the first element from the list and returns it, or `None` if the list is empty.
+    ///
+    /// This function substitutes [`PopEntryList`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`PopEntryList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-popentrylist
     pub fn pop_front(&mut self) -> Option<Box<E>> {
         unsafe { self.0.pop_front().map(|element| Box::from_raw(element)) }
     }
 
-    /// This function substitutes `PushEntryList` of the Windows NT API.
+    /// Appends an element to the front of the list.
+    ///
+    /// This function substitutes [`PushEntryList`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`PushEntryList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-pushentrylist
     pub fn push_front(&mut self, element: E) {
         let boxed_element = Box::new(element);
         unsafe { self.0.push_front(Box::leak(boxed_element)) }
     }
 
+    /// Retains only the elements specified by the predicate, passing a mutable reference to it.
+    ///
+    /// In other words, remove all elements `e` for which `f(&mut e)` returns `false`.
+    /// This method operates in place, visiting each element exactly once in the original order,
+    /// and preserves the order of the retained elements.
+    ///
     /// This operation computes in *O*(*n*) time.
     pub fn retain<F>(&mut self, mut f: F)
     where

@@ -2,7 +2,9 @@
 name = "nt-list_macros"
 version = "0.1.0"
 authors = ["Colin Finck <colin@reactos.org>"]
+description = "Macros for nt-list"
 edition = "2021"
+rust-version = "1.56"
 license = "MIT OR Apache-2.0"
 
 [lib]

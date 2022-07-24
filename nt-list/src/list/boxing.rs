@@ -13,11 +13,19 @@ use super::traits::NtList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
 /// A variant of [`NtListHead`] that boxes every element on insertion.
+///
 /// This guarantees ownership and therefore all `NtBoxingListHead` functions can be used without
 /// resorting to `unsafe`.
+/// If you can, use this implementation over [`NtListHead`].
 ///
 /// You need to implement the [`NtBoxedListElement`] trait to designate a single list as the boxing one.
 /// This also establishes clear ownership when a single element is part of more than one list.
+///
+/// See the [module-level documentation](crate::list) for more details.
+///
+/// This structure substitutes the [`LIST_ENTRY`] structure of the Windows NT API for the list header.
+///
+/// [`LIST_ENTRY`]: https://docs.microsoft.com/en-us/windows/win32/api/ntdef/ns-ntdef-list_entry
 #[repr(transparent)]
 pub struct NtBoxingListHead<
     E: NtBoxedListElement<L = L> + NtListElement<L>,
@@ -29,7 +37,11 @@ where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
     L: NtTypedList<T = NtList>,
 {
-    /// This function substitutes `InitializeListHead` of the Windows NT API.
+    /// Creates a new doubly linked list that owns all elements.
+    ///
+    /// This function substitutes [`InitializeListHead`] of the Windows NT API.
+    ///
+    /// [`InitializeListHead`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-initializelisthead
     pub fn new() -> impl New<Output = Self> {
         unsafe {
             new::of(Self(NtListHead {
@@ -45,22 +57,34 @@ where
         }
     }
 
+    /// Moves all elements from `other` to the end of the list.
+    ///
+    /// This reuses all the nodes from `other` and moves them into `self`.
+    /// After this operation, `other` becomes empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn append(self: Pin<&mut Self>, other: Pin<&mut Self>) {
         unsafe { self.inner_mut().append(other.inner_mut()) }
     }
 
+    /// Provides a reference to the last element, or `None` if the list is empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn back(self: Pin<&Self>) -> Option<&E> {
         unsafe { self.inner().back() }
     }
 
+    /// Provides a mutable reference to the last element, or `None` if the list is empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn back_mut(self: Pin<&mut Self>) -> Option<&mut E> {
         unsafe { self.inner_mut().back_mut() }
     }
 
-    /// This operation computes in *O*(*n*) time.
+    /// Removes all elements from the list, deallocating their memory.
+    ///
+    /// Unlike [`NtListHead::clear`], this operation computes in *O*(*n*) time, because it
+    /// needs to traverse all elements to deallocate them.
     pub fn clear(mut self: Pin<&mut Self>) {
         for element in self.as_mut().iter_mut() {
             unsafe {
@@ -71,11 +95,15 @@ where
         self.inner_mut().clear();
     }
 
+    /// Provides a reference to the first element, or `None` if the list is empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn front(self: Pin<&Self>) -> Option<&E> {
         unsafe { self.inner().front() }
     }
 
+    /// Provides a mutable reference to the first element, or `None` if the list is empty.
+    ///
     /// This operation computes in *O*(*1*) time.
     pub fn front_mut(self: Pin<&mut Self>) -> Option<&mut E> {
         unsafe { self.inner_mut().front_mut() }
@@ -89,29 +117,41 @@ where
         unsafe { Pin::new_unchecked(&mut self.get_unchecked_mut().0) }
     }
 
-    /// This function substitutes `IsListEmpty` of the Windows NT API.
+    /// Returns `true` if the list is empty.
+    ///
+    /// This function substitutes [`IsListEmpty`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`IsListEmpty`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-islistempty
     pub fn is_empty(self: Pin<&Self>) -> bool {
         self.inner().is_empty()
     }
 
+    /// Returns an iterator yielding references to each element of the list.
     pub fn iter(self: Pin<&Self>) -> Iter<E, L> {
         unsafe { self.inner().iter() }
     }
 
+    /// Returns an iterator yielding mutable references to each element of the list.
     pub fn iter_mut(self: Pin<&mut Self>) -> IterMut<E, L> {
         unsafe { self.inner_mut().iter_mut() }
     }
 
+    /// Counts all elements and returns the length of the list.
+    ///
     /// This operation computes in *O*(*n*) time.
     pub fn len(self: Pin<&Self>) -> usize {
         unsafe { self.inner().len() }
     }
 
-    /// This function substitutes `RemoveTailList` of the Windows NT API.
+    /// Removes the last element from the list and returns it, or `None` if the list is empty.
+    ///
+    /// This function substitutes [`RemoveTailList`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`RemoveTailList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-removetaillist
     pub fn pop_back(self: Pin<&mut Self>) -> Option<Box<E>> {
         unsafe {
             self.inner_mut()
@@ -120,9 +160,13 @@ where
         }
     }
 
-    /// This function substitutes `RemoveHeadList` of the Windows NT API.
+    /// Removes the first element from the list and returns it, or `None` if the list is empty.
+    ///
+    /// This function substitutes [`RemoveHeadList`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`RemoveHeadList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-removeheadlist
     pub fn pop_front(self: Pin<&mut Self>) -> Option<Box<E>> {
         unsafe {
             self.inner_mut()
@@ -131,25 +175,41 @@ where
         }
     }
 
-    /// This function substitutes `InsertTailList` of the Windows NT API.
+    /// Appends an element to the back of the list.
+    ///
+    /// This function substitutes [`InsertTailList`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`InsertTailList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-inserttaillist
     pub fn push_back(self: Pin<&mut Self>, element: E) {
         let boxed_element = Box::new(element);
         unsafe { self.inner_mut().push_back(Box::leak(boxed_element)) }
     }
 
-    /// This function substitutes `InsertHeadList` of the Windows NT API.
+    /// Appends an element to the front of the list.
+    ///
+    /// This function substitutes [`InsertHeadList`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`InsertHeadList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-insertheadlist
     pub fn push_front(self: Pin<&mut Self>, element: E) {
         let boxed_element = Box::new(element);
         unsafe { self.inner_mut().push_front(Box::leak(boxed_element)) }
     }
 
-    /// This function substitutes `RemoveEntryList` of the Windows NT API.
+    /// Retains only the elements specified by the predicate, passing a mutable reference to it.
+    ///
+    /// In other words, remove all elements `e` for which `f(&mut e)` returns `false`.
+    /// This method operates in place, visiting each element exactly once in the original order,
+    /// and preserves the order of the retained elements.
+    ///
+    /// This function substitutes [`RemoveEntryList`] of the Windows NT API.
     ///
     /// This operation computes in *O*(*n*) time.
+    ///
+    /// [`RemoveEntryList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-removeentrylist
     pub fn retain<F>(self: Pin<&mut Self>, mut f: F)
     where
         F: FnMut(&mut E) -> bool,

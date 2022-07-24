@@ -9,7 +9,20 @@ use core::ptr;
 use super::traits::NtSingleList;
 use crate::traits::{NtListElement, NtTypedList};
 
+/// A singly linked list header compatible to [`SINGLE_LIST_ENTRY`] of the Windows NT API.
+///
+/// This variant requires elements to be allocated beforehand on a stable address and be
+/// valid as long as the list is used.
+/// As the Rust compiler cannot guarantee the validity of them, almost all `NtSingleListHead`
+/// functions are `unsafe`.
+/// You almost always want to use [`NtBoxingSingleListHead`] over this.
+///
+/// See the [module-level documentation](crate::single_list) for more details.
+///
 /// This structure substitutes the `SINGLE_LIST_ENTRY` structure of the Windows NT API for the list header.
+///
+/// [`NtBoxingSingleListHead`]: crate::single_list::NtBoxingSingleListHead
+/// [`SINGLE_LIST_ENTRY`]: https://docs.microsoft.com/en-us/windows/win32/api/ntdef/ns-ntdef-single_list_entry
 #[repr(C)]
 pub struct NtSingleListHead<E: NtListElement<L>, L: NtTypedList<T = NtSingleList>> {
     pub(crate) next: *mut NtSingleListEntry<E, L>,
@@ -20,12 +33,16 @@ where
     E: NtListElement<L>,
     L: NtTypedList<T = NtSingleList>,
 {
+    /// Creates a new singly linked list.
     pub fn new() -> Self {
         Self {
             next: ptr::null_mut(),
         }
     }
 
+    /// Removes all elements from the list.
+    ///
+    /// This operation computes in *O*(*1*) time, because it only resets the forward link of the header.
     pub fn clear(&mut self) {
         self.next = ptr::null_mut();
     }
@@ -37,18 +54,28 @@ where
         entry_address as *mut NtSingleListEntry<E, L>
     }
 
+    /// Provides a reference to the first element, or `None` if the list is empty.
+    ///
+    /// This operation computes in *O*(*1*) time.
     pub unsafe fn front(&self) -> Option<&E> {
         (!self.is_empty()).then(|| (&*self.next).containing_record())
     }
 
+    /// Provides a mutable reference to the first element, or `None` if the list is empty.
+    ///
+    /// This operation computes in *O*(*1*) time.
     pub unsafe fn front_mut(&mut self) -> Option<&mut E> {
         (!self.is_empty()).then(|| (&mut *self.next).containing_record_mut())
     }
 
+    /// Returns `true` if the list is empty.
+    ///
+    /// This operation computes in *O*(*1*) time.
     pub fn is_empty(&self) -> bool {
         self.next == ptr::null_mut()
     }
 
+    /// Returns an iterator yielding references to each element of the list.
     pub unsafe fn iter(&self) -> Iter<E, L> {
         Iter {
             current: self.next,
@@ -56,6 +83,7 @@ where
         }
     }
 
+    /// Returns an iterator yielding mutable references to each element of the list.
     pub unsafe fn iter_mut(&mut self) -> IterMut<E, L> {
         IterMut {
             current: self.next,
@@ -63,10 +91,20 @@ where
         }
     }
 
+    /// Counts all elements and returns the length of the list.
+    ///
+    /// This operation computes in *O*(*n*) time.
     pub unsafe fn len(&self) -> usize {
         self.iter().count()
     }
 
+    /// Removes the first element from the list and returns it, or `None` if the list is empty.
+    ///
+    /// This function substitutes [`PopEntryList`] of the Windows NT API.
+    ///
+    /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`PopEntryList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-popentrylist
     pub unsafe fn pop_front(&mut self) -> Option<&mut E> {
         (!self.is_empty()).then(|| {
             let entry = &mut *self.next;
@@ -75,6 +113,13 @@ where
         })
     }
 
+    /// Appends an element to the front of the list.
+    ///
+    /// This function substitutes [`PushEntryList`] of the Windows NT API.
+    ///
+    /// This operation computes in *O*(*1*) time.
+    ///
+    /// [`PushEntryList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-pushentrylist
     pub unsafe fn push_front(&mut self, element: &mut E) {
         let entry = Self::entry(element);
 
@@ -82,6 +127,13 @@ where
         self.next = entry;
     }
 
+    /// Retains only the elements specified by the predicate, passing a mutable reference to it.
+    ///
+    /// In other words, remove all elements `e` for which `f(&mut e)` returns `false`.
+    /// This method operates in place, visiting each element exactly once in the original order,
+    /// and preserves the order of the retained elements.
+    ///
+    /// This operation computes in *O*(*n*) time.
     pub unsafe fn retain<F>(&mut self, mut f: F)
     where
         F: FnMut(&mut E) -> bool,
@@ -103,6 +155,12 @@ where
     }
 }
 
+/// Iterator over the elements of a singly linked list.
+///
+/// This iterator is returned from the [`NtSingleListHead::iter`] and
+/// [`NtBoxingSingleListHead::iter`] functions.
+///
+/// [`NtBoxingSingleListHead::iter`]: crate::single_list::NtBoxingSingleListHead::iter
 pub struct Iter<'a, E: NtListElement<L>, L: NtTypedList<T = NtSingleList>> {
     current: *const NtSingleListEntry<E, L>,
     phantom: PhantomData<&'a NtSingleListHead<E, L>>,
@@ -135,6 +193,12 @@ where
 {
 }
 
+/// Mutable iterator over the elements of a singly linked list.
+///
+/// This iterator is returned from the [`NtSingleListHead::iter_mut`] and
+/// [`NtBoxingSingleListHead::iter_mut`] functions.
+///
+/// [`NtBoxingSingleListHead::iter_mut`]: crate::single_list::NtBoxingSingleListHead::iter_mut
 pub struct IterMut<'a, E: NtListElement<L>, L: NtTypedList<T = NtSingleList>> {
     current: *mut NtSingleListEntry<E, L>,
     phantom: PhantomData<&'a mut NtSingleListHead<E, L>>,
@@ -179,6 +243,9 @@ where
     E: NtListElement<L>,
     L: NtTypedList<T = NtSingleList>,
 {
+    /// Allows the creation of an `NtSingleListEntry`, but leaves all fields uninitialized.
+    ///
+    /// Its fields are only initialized when an entry is pushed to a list.
     pub fn new() -> Self {
         unsafe {
             Self {

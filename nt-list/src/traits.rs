@@ -3,8 +3,11 @@
 
 use crate::private::Sealed;
 
+/// The type (singly or doubly linked list) of an empty enum that implements [`NtTypedList`].
 pub trait NtListType: Sealed {}
 
+/// Designates an empty enum as an NT list of a specific type (singly or doubly linked list).
+///
 /// You are supposed to define an empty enum and implement this trait for every list entry field
 /// of every list element type in your program.
 ///
@@ -21,13 +24,18 @@ pub trait NtListType: Sealed {}
 /// enum MyList {}
 /// ```
 ///
-/// [`NtListEntry`]: super::base::NtListEntry
+/// [`NtList`]: enum@crate::list::NtList
+/// [`NtListEntry`]: crate::list::NtListEntry
+/// [`NtSingleList`]: enum@crate::single_list::NtSingleList
 pub trait NtTypedList {
+    /// Identifier of the list
     type T: NtListType;
 }
 
 /// Designates a structure as a list element with an entry field (e.g. [`NtListEntry`]) of a
-/// particular NT list (identified via the enum that implements [`NtTypedList`]).
+/// particular NT list.
+///
+/// The NT list is identified via the enum that implements [`NtTypedList`].
 ///
 /// You can implement this trait multiple times for a structure if it is part of multiple
 /// lists (and therefore contains multiple entry fields).
@@ -44,14 +52,26 @@ pub trait NtTypedList {
 /// }
 /// ```
 ///
-/// [`NtListEntry`]: super::base::NtListEntry
+/// [`NtListEntry`]: crate::list::NtListEntry
 pub trait NtListElement<L: NtTypedList> {
     /// Returns the byte offset to the entry field relative to the beginning of the
     /// element structure.
-    ///
-    /// [`NtListEntry`]: super::base::NtListEntry
     fn offset() -> usize;
 }
+
+/// Implements the [`NtListElement`] and (optionally) [`NtBoxedListElement`] traits for the given
+/// element structure.
+///
+/// Technically, this macro traverses the structure and looks for [`NtListEntry`] and [`NtSingleListEntry`]
+/// fields.
+/// For each entry, it takes its list type parameter `L` and implements [`NtListElement`] along with
+/// the `offset` trait function for it.
+///
+/// If an entry is marked with the `#[boxed]` attribute, [`NtBoxedListElement`] is also implemented for
+/// the structure.
+///
+/// [`NtListEntry`]: crate::list::NtListEntry
+/// [`NtSingleListEntry`]: crate::single_list::NtSingleListEntry
 pub use nt_list_macros::NtListElement;
 
 /// Enables [`NtBoxingListHead`] for a list element structure.
@@ -73,8 +93,9 @@ pub use nt_list_macros::NtListElement;
 /// }
 /// ```
 ///
-/// [`NtBoxingListHead`]: super::boxing::NtBoxingListHead
-/// [`NtListEntry`]: super::base::NtListEntry
+/// [`NtBoxingListHead`]: crate::list::NtBoxingListHead
+/// [`NtListEntry`]: crate::list::NtListEntry
 pub trait NtBoxedListElement {
+    /// Identifier of the list
     type L: NtTypedList;
 }

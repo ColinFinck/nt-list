@@ -10,7 +10,7 @@ use syn::{
 
 /// Helper function to derive the trait that designates an empty enum as a list.
 ///
-/// Example parameters for the doubly-linked list:
+/// Example parameters for the doubly linked list:
 /// * trait_name: "NtList"
 /// * trait_path: quote! {::nt_list::list::traits::NtList}
 pub(crate) fn derive_list_enum_trait(
