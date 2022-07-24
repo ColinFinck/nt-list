@@ -7,18 +7,18 @@ use core::mem::MaybeUninit;
 use core::ptr;
 
 use super::traits::NtSingleList;
-use crate::traits::{NtListElement, NtListOfType};
+use crate::traits::{NtListElement, NtTypedList};
 
 /// This structure substitutes the `SINGLE_LIST_ENTRY` structure of the Windows NT API for the list header.
 #[repr(C)]
-pub struct NtSingleListHead<E: NtListElement<L>, L: NtListOfType<T = NtSingleList>> {
+pub struct NtSingleListHead<E: NtListElement<L>, L: NtTypedList<T = NtSingleList>> {
     pub(crate) next: *mut NtSingleListEntry<E, L>,
 }
 
 impl<E, L> NtSingleListHead<E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
     pub fn new() -> Self {
         Self {
@@ -103,7 +103,7 @@ where
     }
 }
 
-pub struct Iter<'a, E: NtListElement<L>, L: NtListOfType<T = NtSingleList>> {
+pub struct Iter<'a, E: NtListElement<L>, L: NtTypedList<T = NtSingleList>> {
     current: *const NtSingleListEntry<E, L>,
     phantom: PhantomData<&'a NtSingleListHead<E, L>>,
 }
@@ -111,7 +111,7 @@ pub struct Iter<'a, E: NtListElement<L>, L: NtListOfType<T = NtSingleList>> {
 impl<'a, E, L> Iterator for Iter<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
     type Item = &'a E;
 
@@ -131,11 +131,11 @@ where
 impl<'a, E, L> FusedIterator for Iter<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
 }
 
-pub struct IterMut<'a, E: NtListElement<L>, L: NtListOfType<T = NtSingleList>> {
+pub struct IterMut<'a, E: NtListElement<L>, L: NtTypedList<T = NtSingleList>> {
     current: *mut NtSingleListEntry<E, L>,
     phantom: PhantomData<&'a mut NtSingleListHead<E, L>>,
 }
@@ -143,7 +143,7 @@ pub struct IterMut<'a, E: NtListElement<L>, L: NtListOfType<T = NtSingleList>> {
 impl<'a, E, L> Iterator for IterMut<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
     type Item = &'a mut E;
 
@@ -163,21 +163,21 @@ where
 impl<'a, E, L> FusedIterator for IterMut<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
 }
 
 /// This structure substitutes the `SINGLE_LIST_ENTRY` structure of the Windows NT API for actual list entries.
 #[derive(Debug)]
 #[repr(C)]
-pub struct NtSingleListEntry<E: NtListElement<L>, L: NtListOfType<T = NtSingleList>> {
+pub struct NtSingleListEntry<E: NtListElement<L>, L: NtTypedList<T = NtSingleList>> {
     pub(crate) next: *mut NtSingleListEntry<E, L>,
 }
 
 impl<E, L> NtSingleListEntry<E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
     pub fn new() -> Self {
         unsafe {
@@ -203,7 +203,7 @@ where
 impl<E, L> Default for NtSingleListEntry<E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
     fn default() -> Self {
         Self::new()

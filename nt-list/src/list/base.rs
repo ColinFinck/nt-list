@@ -9,11 +9,11 @@ use core::pin::Pin;
 use moveit::{new, New};
 
 use super::traits::NtList;
-use crate::traits::{NtListElement, NtListOfType};
+use crate::traits::{NtListElement, NtTypedList};
 
 /// This structure substitutes the `LIST_ENTRY` structure of the Windows NT API for the list header.
 #[repr(C)]
-pub struct NtListHead<E: NtListElement<L>, L: NtListOfType<T = NtList>> {
+pub struct NtListHead<E: NtListElement<L>, L: NtTypedList<T = NtList>> {
     pub(crate) flink: *mut NtListEntry<E, L>,
     pub(crate) blink: *mut NtListEntry<E, L>,
     pub(crate) pin: PhantomPinned,
@@ -22,7 +22,7 @@ pub struct NtListHead<E: NtListElement<L>, L: NtListOfType<T = NtList>> {
 impl<E, L> NtListHead<E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     pub fn new() -> impl New<Output = Self> {
         unsafe {
@@ -170,7 +170,7 @@ where
     }
 }
 
-pub struct Iter<'a, E: NtListElement<L>, L: NtListOfType<T = NtList>> {
+pub struct Iter<'a, E: NtListElement<L>, L: NtTypedList<T = NtList>> {
     head: &'a NtListHead<E, L>,
     flink: *const NtListEntry<E, L>,
     blink: *const NtListEntry<E, L>,
@@ -179,7 +179,7 @@ pub struct Iter<'a, E: NtListElement<L>, L: NtListOfType<T = NtList>> {
 impl<'a, E, L> Iter<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     fn terminate(&mut self) {
         self.flink = self.head as *const _ as usize as *const NtListEntry<E, L>;
@@ -190,7 +190,7 @@ where
 impl<'a, E, L> Iterator for Iter<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     type Item = &'a E;
 
@@ -221,7 +221,7 @@ where
 impl<'a, E, L> DoubleEndedIterator for Iter<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     fn next_back(&mut self) -> Option<&'a E> {
         if self.blink as usize == self.head as *const _ as usize {
@@ -246,11 +246,11 @@ where
 impl<'a, E, L> FusedIterator for Iter<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
 }
 
-pub struct IterMut<'a, E: NtListElement<L>, L: NtListOfType<T = NtList>> {
+pub struct IterMut<'a, E: NtListElement<L>, L: NtTypedList<T = NtList>> {
     head: &'a mut NtListHead<E, L>,
     flink: *mut NtListEntry<E, L>,
     blink: *mut NtListEntry<E, L>,
@@ -259,7 +259,7 @@ pub struct IterMut<'a, E: NtListElement<L>, L: NtListOfType<T = NtList>> {
 impl<'a, E, L> IterMut<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     fn terminate(&mut self) {
         self.flink = self.head as *const _ as usize as *mut NtListEntry<E, L>;
@@ -270,7 +270,7 @@ where
 impl<'a, E, L> Iterator for IterMut<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     type Item = &'a mut E;
 
@@ -301,7 +301,7 @@ where
 impl<'a, E, L> DoubleEndedIterator for IterMut<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     fn next_back(&mut self) -> Option<&'a mut E> {
         if self.blink as usize == self.head as *const _ as usize {
@@ -326,14 +326,14 @@ where
 impl<'a, E, L> FusedIterator for IterMut<'a, E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
 }
 
 /// This structure substitutes the `LIST_ENTRY` structure of the Windows NT API for actual list entries.
 #[derive(Debug)]
 #[repr(C)]
-pub struct NtListEntry<E: NtListElement<L>, L: NtListOfType<T = NtList>> {
+pub struct NtListEntry<E: NtListElement<L>, L: NtTypedList<T = NtList>> {
     pub(crate) flink: *mut NtListEntry<E, L>,
     pub(crate) blink: *mut NtListEntry<E, L>,
     pin: PhantomPinned,
@@ -342,7 +342,7 @@ pub struct NtListEntry<E: NtListElement<L>, L: NtListOfType<T = NtList>> {
 impl<E, L> NtListEntry<E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     pub fn new() -> Self {
         unsafe {
@@ -377,7 +377,7 @@ where
 impl<E, L> Default for NtListEntry<E, L>
 where
     E: NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     fn default() -> Self {
         Self::new()

@@ -23,7 +23,7 @@ pub(crate) fn derive_list_enum_trait(
             let ident = &input.ident;
 
             return Ok(quote! {
-                impl ::nt_list::NtListOfType for #ident {
+                impl ::nt_list::NtTypedList for #ident {
                     type T = #list_type_path;
                 }
             });

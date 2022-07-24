@@ -7,7 +7,7 @@ use alloc::boxed::Box;
 
 use super::base::{Iter, IterMut, NtSingleListEntry, NtSingleListHead};
 use super::traits::NtSingleList;
-use crate::traits::{NtBoxedListElement, NtListElement, NtListOfType};
+use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
 /// A variant of [`NtSingleListHead`] that boxes every element on insertion.
 /// This guarantees ownership and therefore all `NtBoxingSingleListHead` functions can be used without
@@ -18,13 +18,13 @@ use crate::traits::{NtBoxedListElement, NtListElement, NtListOfType};
 #[repr(transparent)]
 pub struct NtBoxingSingleListHead<
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 >(NtSingleListHead<E, L>);
 
 impl<E, L> NtBoxingSingleListHead<E, L>
 where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
     pub fn new() -> Self {
         Self(NtSingleListHead::<E, L>::new())
@@ -112,7 +112,7 @@ where
 impl<E, L> Drop for NtBoxingSingleListHead<E, L>
 where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtListOfType<T = NtSingleList>,
+    L: NtTypedList<T = NtSingleList>,
 {
     fn drop(&mut self) {
         for element in self.iter_mut() {

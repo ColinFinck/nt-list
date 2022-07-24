@@ -22,12 +22,12 @@ pub trait NtListType: Sealed {}
 /// ```
 ///
 /// [`NtListEntry`]: super::base::NtListEntry
-pub trait NtListOfType {
+pub trait NtTypedList {
     type T: NtListType;
 }
 
 /// Designates a structure as a list element with an entry field (e.g. [`NtListEntry`]) of a
-/// particular NT list (identified via the enum that implements [`NtListOfType`]).
+/// particular NT list (identified via the enum that implements [`NtTypedList`]).
 ///
 /// You can implement this trait multiple times for a structure if it is part of multiple
 /// lists (and therefore contains multiple entry fields).
@@ -45,7 +45,7 @@ pub trait NtListOfType {
 /// ```
 ///
 /// [`NtListEntry`]: super::base::NtListEntry
-pub trait NtListElement<L: NtListOfType> {
+pub trait NtListElement<L: NtTypedList> {
     /// Returns the byte offset to the entry field relative to the beginning of the
     /// element structure.
     ///
@@ -76,5 +76,5 @@ pub use nt_list_macros::NtListElement;
 /// [`NtBoxingListHead`]: super::boxing::NtBoxingListHead
 /// [`NtListEntry`]: super::base::NtListEntry
 pub trait NtBoxedListElement {
-    type L: NtListOfType;
+    type L: NtTypedList;
 }

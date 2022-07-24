@@ -10,7 +10,7 @@ use moveit::{new, New};
 
 use super::base::{Iter, IterMut, NtListEntry, NtListHead};
 use super::traits::NtList;
-use crate::traits::{NtBoxedListElement, NtListElement, NtListOfType};
+use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
 /// A variant of [`NtListHead`] that boxes every element on insertion.
 /// This guarantees ownership and therefore all `NtBoxingListHead` functions can be used without
@@ -21,13 +21,13 @@ use crate::traits::{NtBoxedListElement, NtListElement, NtListOfType};
 #[repr(transparent)]
 pub struct NtBoxingListHead<
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 >(NtListHead<E, L>);
 
 impl<E, L> NtBoxingListHead<E, L>
 where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     /// This function substitutes `InitializeListHead` of the Windows NT API.
     pub fn new() -> impl New<Output = Self> {
@@ -170,7 +170,7 @@ where
 impl<E, L> Drop for NtBoxingListHead<E, L>
 where
     E: NtBoxedListElement<L = L> + NtListElement<L>,
-    L: NtListOfType<T = NtList>,
+    L: NtTypedList<T = NtList>,
 {
     fn drop(&mut self) {
         let pinned = unsafe { Pin::new_unchecked(self) };
@@ -374,7 +374,7 @@ mod tests {
     fn verify_all_links<E, L>(head: Pin<&NtListHead<E, L>>)
     where
         E: NtListElement<L>,
-        L: NtListOfType<T = NtList>,
+        L: NtTypedList<T = NtList>,
     {
         let mut current;
         let end = head.get_ref() as *const _ as usize as *mut NtListEntry<E, L>;
