@@ -1,11 +1,11 @@
 // Copyright 2022 Colin Finck <colin@reactos.org>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use proc_macro2::TokenStream;
+use proc_macro2::{Delimiter, TokenStream, TokenTree};
 use quote::quote;
 use syn::{
-    Data, DeriveInput, Error, Field, Fields, GenericArgument, Ident, PathArguments, Result, Type,
-    TypePath,
+    AttrStyle, Data, DeriveInput, Error, Field, Fields, GenericArgument, Ident, PathArguments,
+    Result, Type, TypePath,
 };
 
 /// Helper function to derive the trait that designates an empty enum as a list.
@@ -58,6 +58,13 @@ pub fn derive_list_struct_trait(input: DeriveInput) -> Result<TokenStream> {
         }
     };
 
+    if !has_repr_c(&input) {
+        return Err(Error::new_spanned(
+            input,
+            "NtListElement can only be derived for structs with #[repr(C)]",
+        ));
+    }
+
     let mut boxed_attrs = 0usize;
     let ident = &input.ident;
 
@@ -109,6 +116,33 @@ pub fn derive_list_struct_trait(input: DeriveInput) -> Result<TokenStream> {
     }
 
     Ok(output)
+}
+
+/// Returns whether the given input has a `#[repr(C)]` attribute.
+///
+/// This also works when multiple `repr` attributes are used, or a single `repr` attribute has multiple entries.
+fn has_repr_c(input: &DeriveInput) -> bool {
+    input.attrs.iter().any(|attr| {
+        matches!(attr.style, AttrStyle::Outer)
+            && attr.path.is_ident("repr")
+            && attr.tokens.clone().into_iter().any(|token_tree| {
+                let group = match token_tree {
+                    TokenTree::Group(group) => group,
+                    _ => return false,
+                };
+                if group.delimiter() != Delimiter::Parenthesis {
+                    return false;
+                }
+
+                group.stream().into_iter().any(|token_tree| {
+                    if let TokenTree::Ident(ident) = token_tree {
+                        ident == "C"
+                    } else {
+                        false
+                    }
+                })
+            })
+    })
 }
 
 pub(crate) struct ElementFieldInfo<'a> {
