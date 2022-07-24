@@ -348,7 +348,7 @@ mod tests {
             list.as_mut().push_back(MyElement::new(i));
         }
 
-        // Retain all even elements.
+        // Keep only the even elements.
         list.as_mut().retain(|element| element.value % 2 == 0);
 
         assert_eq!(list.as_ref().len(), 5);
@@ -358,6 +358,15 @@ mod tests {
         }
 
         verify_all_links(list.as_ref().inner());
+
+        // Keep only the first and last of the remaining elements.
+        list.as_mut()
+            .retain(|element| element.value == 0 || element.value == 8);
+
+        let mut iter = list.as_ref().iter();
+        assert_eq!(iter.next().unwrap().value, 0);
+        assert_eq!(iter.next().unwrap().value, 8);
+        assert!(matches!(iter.next(), None));
     }
 
     fn verify_all_links<E, L>(head: Pin<&NtListHead<E, L>>)
