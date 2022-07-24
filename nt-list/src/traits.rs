@@ -13,6 +13,7 @@ pub trait NtListType {}
 /// lists need to be uniquely identified, and this is what the empty enum types are for.
 ///
 /// The easiest way to implement this trait is to use `derive` with the appropriate list type
+/// ([`NtList`] or [`NtSingleList`]):
 ///
 /// ```ignore
 /// #[derive(NtList)]

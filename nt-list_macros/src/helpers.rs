@@ -127,7 +127,7 @@ pub(crate) struct ElementFieldInfo<'a> {
 /// * `entry: NtListEntry<Self, MyList>`
 /// * `entry: nt_list::list::base::NtListEntry<Self, mytraits::MyList>`
 pub(crate) fn parse_element_field<'a>(field: &'a Field) -> Option<ElementFieldInfo<'a>> {
-    const SUPPORTED_TYPES: &[&str] = &["NtListEntry"];
+    const SUPPORTED_TYPES: &[&str] = &["NtListEntry", "NtSingleListEntry"];
 
     let ident = &field.ident.as_ref()?;
     let is_boxed = field
