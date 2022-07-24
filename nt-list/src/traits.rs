@@ -1,9 +1,10 @@
 // Copyright 2022 Colin Finck <colin@reactos.org>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-pub trait NtListType {}
+use crate::private::Sealed;
 
-/// Designates an empty enum as an NT list of a specific type (singly/doubly-linked list).
+pub trait NtListType: Sealed {}
+
 /// You are supposed to define an empty enum and implement this trait for every list entry field
 /// of every list element type in your program.
 ///
