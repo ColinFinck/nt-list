@@ -60,8 +60,14 @@ where
     }
 
     /// This operation computes in *O*(*n*) time.
-    pub fn clear(self: Pin<&mut Self>) {
-        self.retain(|_| false)
+    pub fn clear(mut self: Pin<&mut Self>) {
+        for element in self.as_mut().iter_mut() {
+            unsafe {
+                Box::from_raw(element);
+            }
+        }
+
+        self.inner_mut().clear();
     }
 
     /// This operation computes in *O*(*1*) time.

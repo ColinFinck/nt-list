@@ -69,8 +69,12 @@ where
         (!self.as_ref().is_empty()).then(|| (&mut *self.blink).containing_record_mut())
     }
 
-    pub unsafe fn clear(self: Pin<&mut Self>) {
-        self.retain(|_| false)
+    pub fn clear(self: Pin<&mut Self>) {
+        let end_marker = self.as_ref().end_marker();
+        let self_mut = unsafe { self.get_unchecked_mut() };
+
+        self_mut.flink = end_marker;
+        self_mut.blink = end_marker;
     }
 
     /// Returns the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
