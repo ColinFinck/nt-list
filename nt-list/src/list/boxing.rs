@@ -5,6 +5,7 @@ use core::marker::PhantomPinned;
 use core::mem::MaybeUninit;
 use core::pin::Pin;
 
+use alloc::boxed::Box;
 use moveit::{new, New};
 
 use super::base::{Iter, IterMut, NtListEntry, NtListHead};
@@ -187,6 +188,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use alloc::vec::Vec;
     use moveit::moveit;
 
     #[derive(NtList)]

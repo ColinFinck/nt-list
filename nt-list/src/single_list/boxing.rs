@@ -3,6 +3,8 @@
 
 use core::ptr;
 
+use alloc::boxed::Box;
+
 use super::base::{Iter, IterMut, NtSingleListEntry, NtSingleListHead};
 use super::traits::NtSingleList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtListOfType};

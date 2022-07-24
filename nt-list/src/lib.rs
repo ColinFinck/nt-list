@@ -1,6 +1,11 @@
 // Copyright 2022 Colin Finck <colin@reactos.org>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+#![no_std]
+
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 // Required for deriving our traits when testing.
 #[cfg(test)]
 extern crate self as nt_list;
