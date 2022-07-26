@@ -5,6 +5,10 @@ use crate::private::Sealed;
 use crate::traits::NtListType;
 
 /// Designates a list as an NT singly linked list (`SINGLE_LIST_ENTRY` structure of the Windows NT API).
+///
+/// You usually want to use `#[derive(NtSingleList)]` to implement [`NtTypedList`] with type set to `NtSingleList`.
+///
+/// [`NtTypedList`]: crate::traits::NtTypedList
 pub enum NtSingleList {}
 
 /// Singly linked list type (`SINGLE_LIST_ENTRY` structure of the Windows NT API)

@@ -4,7 +4,7 @@
 //! Provides compatible, type-safe, and idiomatic Rust implementations of the Windows NT Linked Lists,
 //! known as [`LIST_ENTRY`] and [`SINGLE_LIST_ENTRY`].
 //!
-//! Singly and doubly linked lists of this format are two fundamental data structures widely used in
+//! Singly and doubly linked lists of this format are fundamental data structures widely used in
 //! Windows itself and in drivers written for Windows.
 //! In the case of a doubly linked list, Windows defines a `LIST_ENTRY` structure with forward and backward
 //! pointers to other `LIST_ENTRY` structures.
@@ -25,7 +25,18 @@
 //! The `nt-list` crate introduces type safety for these lists, taking away some responsibility from the user
 //! and moving it to the compiler.
 //! Additionally, it offers an idiomatic Rust interface similar to that of [`LinkedList`] and [`Vec`].
-//! Usage can be as simple as:
+//! 
+//! ## Example
+//! Creating a linked list with `nt-list` boils down to these three steps:
+//! 
+//! 1. You define an empty enum to identify your list (for type safety when pushing elements),
+//!    and derive either [`NtList`] (doubly linked list) or [`NtSingleList`] (singly linked list).
+//! 2. You define your element structure, declare an entry as `#[boxed]` if desired,
+//!    and derive [`NtListElement`].
+//! 3. You call `new` of the respective list implementation with the element structure
+//!    and empty enum as type parameters.
+//! 
+//! All of this taken together looks like:
 //!
 //! ```ignore
 //! #[derive(NtSingleList)]
@@ -46,14 +57,28 @@
 //!         value: 42,
 //!         ..Default::default()
 //!     });
+//! 
+//!     for element in list.iter() {
+//!         println!("{}", element.value);
+//!     }
 //! }
 //! ```
 //!
 //! Check the module-level documentation of [list] and [single_list] for more information on how to use
 //! `nt-list`.
 //!
+//! ## `no_std` support
+//! The crate is `no_std`-compatible and therefore usable from firmware-level code up to user-mode applications.
+//! 
+//! To support heap allocations in `NtBoxingListHead` and `NtBoxingSingleListHead`, the crate depends on the
+//! `alloc` library.
+//! If you want to use the crate in a pure `no_std` environment without heap allocations, include it with
+//! `default-features = false` to disable the default `alloc` feature.
+//!
 //! [`LinkedList`]: alloc::collections::LinkedList
 //! [`LIST_ENTRY`]: https://docs.microsoft.com/en-us/windows/win32/api/ntdef/ns-ntdef-list_entry
+//! [`NtList`]: enum@crate::list::NtList
+//! [`NtSingleList`]: enum@crate::single_list::NtSingleList
 //! [`SINGLE_LIST_ENTRY`]: https://docs.microsoft.com/en-us/windows/win32/api/ntdef/ns-ntdef-single_list_entry
 //! [`Vec`]: alloc::vec::Vec
 

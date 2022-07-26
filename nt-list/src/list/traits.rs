@@ -5,6 +5,10 @@ use crate::private::Sealed;
 use crate::traits::NtListType;
 
 /// Designates a list as an NT doubly linked list (`LIST_ENTRY` structure of the Windows NT API).
+///
+/// You usually want to use `#[derive(NtList)]` to implement [`NtTypedList`] with type set to `NtList`.
+///
+/// [`NtTypedList`]: crate::traits::NtTypedList
 pub enum NtList {}
 
 /// Doubly linked list type (`LIST_ENTRY` structure of the Windows NT API)
