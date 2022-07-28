@@ -132,12 +132,12 @@ where
 
                 if f(element) {
                     previous = current;
+                    current = (*current).next;
                 } else {
                     (*previous).next = (*current).next;
+                    current = (*current).next;
                     Box::from_raw(element);
                 }
-
-                current = (*current).next;
             }
         }
     }
