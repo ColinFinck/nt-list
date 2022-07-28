@@ -42,6 +42,7 @@ where
     /// This function substitutes [`InitializeListHead`] of the Windows NT API.
     ///
     /// [`InitializeListHead`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-initializelisthead
+    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> impl New<Output = Self> {
         unsafe {
             new::of(Self(NtListHead {

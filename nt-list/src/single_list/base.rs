@@ -72,7 +72,7 @@ where
     ///
     /// This operation computes in *O*(*1*) time.
     pub fn is_empty(&self) -> bool {
-        self.next == ptr::null_mut()
+        self.next.is_null()
     }
 
     /// Returns an iterator yielding references to each element of the list.
@@ -141,8 +141,8 @@ where
         let mut previous = self as *mut _ as usize as *mut NtSingleListEntry<E, L>;
         let mut current = self.next;
 
-        while current != ptr::null_mut() {
-            let element = (&*current).containing_record_mut();
+        while !current.is_null() {
+            let element = (&mut *current).containing_record_mut();
 
             if f(element) {
                 previous = current;
@@ -152,6 +152,16 @@ where
 
             current = (*current).next;
         }
+    }
+}
+
+impl<E, L> Default for NtSingleListHead<E, L>
+where
+    E: NtListElement<L>,
+    L: NtTypedList<T = NtSingleList>,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -174,7 +184,7 @@ where
     type Item = &'a E;
 
     fn next(&mut self) -> Option<&'a E> {
-        if self.current == ptr::null() {
+        if self.current.is_null() {
             None
         } else {
             unsafe {
@@ -212,11 +222,11 @@ where
     type Item = &'a mut E;
 
     fn next(&mut self) -> Option<&'a mut E> {
-        if self.current == ptr::null_mut() {
+        if self.current.is_null() {
             None
         } else {
             unsafe {
-                let element = (&*self.current).containing_record_mut();
+                let element = (&mut *self.current).containing_record_mut();
                 self.current = (*self.current).next;
                 Some(element)
             }
@@ -246,6 +256,7 @@ where
     /// Allows the creation of an `NtSingleListEntry`, but leaves all fields uninitialized.
     ///
     /// Its fields are only initialized when an entry is pushed to a list.
+    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> Self {
         unsafe {
             Self {
@@ -258,7 +269,7 @@ where
         unsafe { &*(self.element_address() as *const E) }
     }
 
-    pub(crate) fn containing_record_mut(&self) -> &mut E {
+    pub(crate) fn containing_record_mut(&mut self) -> &mut E {
         unsafe { &mut *(self.element_address() as *mut E) }
     }
 

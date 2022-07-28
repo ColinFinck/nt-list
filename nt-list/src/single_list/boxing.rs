@@ -1,8 +1,6 @@
 // Copyright 2022 Colin Finck <colin@reactos.org>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use core::ptr;
-
 use alloc::boxed::Box;
 
 use super::base::{Iter, IterMut, NtSingleListEntry, NtSingleListHead};
@@ -128,9 +126,9 @@ where
         let mut previous = self as *mut _ as usize as *mut NtSingleListEntry<E, L>;
         let mut current = self.0.next;
 
-        while current != ptr::null_mut() {
+        while !current.is_null() {
             unsafe {
-                let element = (&*current).containing_record_mut();
+                let element = (&mut *current).containing_record_mut();
 
                 if f(element) {
                     previous = current;
@@ -142,6 +140,16 @@ where
                 current = (*current).next;
             }
         }
+    }
+}
+
+impl<E, L> Default for NtBoxingSingleListHead<E, L>
+where
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtTypedList<T = NtSingleList>,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 

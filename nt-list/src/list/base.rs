@@ -42,6 +42,7 @@ where
     /// This function substitutes [`InitializeListHead`] of the Windows NT API.
     ///
     /// [`InitializeListHead`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-initializelisthead
+    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> impl New<Output = Self> {
         unsafe {
             new::of(Self {
@@ -301,7 +302,7 @@ where
                     // We are crossing the other end of the iterator and must not iterate any further.
                     self.terminate();
                 } else {
-                    self.flink = (&*self.flink).flink;
+                    self.flink = (*self.flink).flink;
                 }
 
                 Some(element)
@@ -330,7 +331,7 @@ where
                     // We are crossing the other end of the iterator and must not iterate any further.
                     self.terminate();
                 } else {
-                    self.blink = (&*self.blink).blink;
+                    self.blink = (*self.blink).blink;
                 }
 
                 Some(element)
@@ -380,13 +381,13 @@ where
             None
         } else {
             unsafe {
-                let element = (&*self.flink).containing_record_mut();
+                let element = (&mut *self.flink).containing_record_mut();
 
                 if self.flink == self.blink {
                     // We are crossing the other end of the iterator and must not iterate any further.
                     self.terminate();
                 } else {
-                    self.flink = (&*self.flink).flink;
+                    self.flink = (*self.flink).flink;
                 }
 
                 Some(element)
@@ -409,13 +410,13 @@ where
             None
         } else {
             unsafe {
-                let element = (&*self.blink).containing_record_mut();
+                let element = (&mut *self.blink).containing_record_mut();
 
                 if self.blink == self.flink {
                     // We are crossing the other end of the iterator and must not iterate any further.
                     self.terminate();
                 } else {
-                    self.blink = (&*self.blink).blink;
+                    self.blink = (*self.blink).blink;
                 }
 
                 Some(element)
@@ -448,6 +449,7 @@ where
     /// Allows the creation of an `NtListEntry`, but leaves all fields uninitialized.
     ///
     /// Its fields are only initialized when an entry is pushed to a list.
+    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> Self {
         unsafe {
             Self {
@@ -462,7 +464,7 @@ where
         unsafe { &*(self.element_address() as *const E) }
     }
 
-    fn containing_record_mut(&self) -> &mut E {
+    fn containing_record_mut(&mut self) -> &mut E {
         unsafe { &mut *(self.element_address() as *mut E) }
     }
 

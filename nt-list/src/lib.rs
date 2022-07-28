@@ -25,17 +25,17 @@
 //! The `nt-list` crate introduces type safety for these lists, taking away some responsibility from the user
 //! and moving it to the compiler.
 //! Additionally, it offers an idiomatic Rust interface similar to that of [`LinkedList`] and [`Vec`].
-//! 
+//!
 //! ## Example
 //! Creating a linked list with `nt-list` boils down to these three steps:
-//! 
+//!
 //! 1. You define an empty enum to identify your list (for type safety when pushing elements),
 //!    and derive either [`NtList`] (doubly linked list) or [`NtSingleList`] (singly linked list).
 //! 2. You define your element structure, declare an entry as `#[boxed]` if desired,
 //!    and derive [`NtListElement`].
 //! 3. You call `new` of the respective list implementation with the element structure
 //!    and empty enum as type parameters.
-//! 
+//!
 //! All of this taken together looks like:
 //!
 //! ```ignore
@@ -57,7 +57,7 @@
 //!         value: 42,
 //!         ..Default::default()
 //!     });
-//! 
+//!
 //!     for element in list.iter() {
 //!         println!("{}", element.value);
 //!     }
@@ -69,7 +69,7 @@
 //!
 //! ## `no_std` support
 //! The crate is `no_std`-compatible and therefore usable from firmware-level code up to user-mode applications.
-//! 
+//!
 //! To support heap allocations in `NtBoxingListHead` and `NtBoxingSingleListHead`, the crate depends on the
 //! `alloc` library.
 //! If you want to use the crate in a pure `no_std` environment without heap allocations, include it with
@@ -84,6 +84,7 @@
 
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![allow(clippy::missing_safety_doc)]
 #![warn(missing_docs)]
 
 #[cfg(feature = "alloc")]

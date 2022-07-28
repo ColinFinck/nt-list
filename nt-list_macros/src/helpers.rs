@@ -160,15 +160,11 @@ pub(crate) struct ElementFieldInfo<'a> {
 /// `field` can be the syntax tree of e.g.
 /// * `entry: NtListEntry<Self, MyList>`
 /// * `entry: nt_list::list::base::NtListEntry<Self, mytraits::MyList>`
-pub(crate) fn parse_element_field<'a>(field: &'a Field) -> Option<ElementFieldInfo<'a>> {
+pub(crate) fn parse_element_field(field: &Field) -> Option<ElementFieldInfo> {
     const SUPPORTED_TYPES: &[&str] = &["NtListEntry", "NtSingleListEntry"];
 
     let ident = &field.ident.as_ref()?;
-    let is_boxed = field
-        .attrs
-        .iter()
-        .find(|attr| attr.path.is_ident("boxed"))
-        .is_some();
+    let is_boxed = field.attrs.iter().any(|attr| attr.path.is_ident("boxed"));
 
     // Get the last segment of the type path and check it against the type name.
     // This isn't 100% accurate, we may catch similarly named types that are not ours.
