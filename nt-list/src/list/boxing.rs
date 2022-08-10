@@ -109,7 +109,7 @@ where
             unsafe {
                 let element = (&mut *current).containing_record_mut();
                 current = (*current).flink;
-                Box::from_raw(element);
+                drop(Box::from_raw(element));
             }
         }
     }
@@ -239,7 +239,7 @@ where
 
                 unsafe {
                     (*entry).remove();
-                    Box::from_raw(element);
+                    drop(Box::from_raw(element));
                 }
             }
         }
@@ -258,7 +258,7 @@ where
             // Reconstruct the `Box` we created in push_back/push_front and let it leave the scope
             // to call its Drop handler and deallocate the element gracefully.
             unsafe {
-                Box::from_raw(element);
+                drop(Box::from_raw(element));
             }
         }
     }

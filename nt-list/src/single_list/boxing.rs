@@ -62,7 +62,7 @@ where
             unsafe {
                 let element = (&mut *current).containing_record_mut();
                 current = (*current).next;
-                Box::from_raw(element);
+                drop(Box::from_raw(element));
             }
         }
     }
@@ -152,7 +152,7 @@ where
                 } else {
                     (*previous).next = (*current).next;
                     current = (*current).next;
-                    Box::from_raw(element);
+                    drop(Box::from_raw(element));
                 }
             }
         }
@@ -179,7 +179,7 @@ where
             // Reconstruct the `Box` we created in push_front and let it leave the scope
             // to call its Drop handler and deallocate the element gracefully.
             unsafe {
-                Box::from_raw(element);
+                drop(Box::from_raw(element));
             }
         }
     }
