@@ -42,13 +42,29 @@ where
     /// Unlike [`NtSingleListHead::clear`], this operation computes in *O*(*n*) time, because it
     /// needs to traverse all elements to deallocate them.
     pub fn clear(&mut self) {
-        for element in self.iter_mut() {
+        // Get the link to the first element before it's being reset.
+        let mut current = self.0.next;
+
+        // Make the list appear empty before deallocating any element.
+        // By doing this here and not at the very end, we guard against the following scenario:
+        //
+        // 1. We deallocate an element.
+        // 2. The `Drop` handler of that element is called and panics.
+        // 3. Consequently, the `Drop` handler of `NtBoxingSingleListHead` is called and removes all elements.
+        // 4. While removing elements, the just dropped element is dropped again.
+        //
+        // By clearing the list at the beginning, the `Drop` handler of `NtBoxingSingleListHead` won't find any
+        // elements, and thereby it won't drop any elements.
+        self.0.clear();
+
+        // Traverse the list in the old-fashioned way and deallocate each element.
+        while !current.is_null() {
             unsafe {
+                let element = (&mut *current).containing_record_mut();
+                current = (*current).next;
                 Box::from_raw(element);
             }
         }
-
-        self.0.clear();
     }
 
     /// Provides a reference to the first element, or `None` if the list is empty.

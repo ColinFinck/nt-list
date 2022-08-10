@@ -113,7 +113,7 @@ where
     }
 
     /// Returns the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
-    fn end_marker(self: Pin<&Self>) -> *mut NtListEntry<E, L> {
+    pub(crate) fn end_marker(self: Pin<&Self>) -> *mut NtListEntry<E, L> {
         self.get_ref() as *const _ as usize as *mut NtListEntry<E, L>
     }
 
@@ -460,11 +460,11 @@ where
         }
     }
 
-    fn containing_record(&self) -> &E {
+    pub(crate) fn containing_record(&self) -> &E {
         unsafe { &*(self.element_address() as *const E) }
     }
 
-    fn containing_record_mut(&mut self) -> &mut E {
+    pub(crate) fn containing_record_mut(&mut self) -> &mut E {
         unsafe { &mut *(self.element_address() as *mut E) }
     }
 

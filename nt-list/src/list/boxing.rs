@@ -86,14 +86,32 @@ where
     ///
     /// Unlike [`NtListHead::clear`], this operation computes in *O*(*n*) time, because it
     /// needs to traverse all elements to deallocate them.
-    pub fn clear(mut self: Pin<&mut Self>) {
-        for element in self.as_mut().iter_mut() {
+    pub fn clear(self: Pin<&mut Self>) {
+        let end_marker = self.as_ref().inner().end_marker();
+
+        // Get the link to the first element before it's being reset.
+        let mut current = self.0.flink;
+
+        // Make the list appear empty before deallocating any element.
+        // By doing this here and not at the very end, we guard against the following scenario:
+        //
+        // 1. We deallocate an element.
+        // 2. The `Drop` handler of that element is called and panics.
+        // 3. Consequently, the `Drop` handler of `NtBoxingListHead` is called and removes all elements.
+        // 4. While removing elements, the just dropped element is dropped again.
+        //
+        // By clearing the list at the beginning, the `Drop` handler of `NtBoxingListHead` won't find any
+        // elements, and thereby it won't drop any elements.
+        self.inner_mut().clear();
+
+        // Traverse the list in the old-fashioned way and deallocate each element.
+        while current != end_marker {
             unsafe {
+                let element = (&mut *current).containing_record_mut();
+                current = (*current).flink;
                 Box::from_raw(element);
             }
         }
-
-        self.inner_mut().clear();
     }
 
     /// Provides a reference to the first element, or `None` if the list is empty.
