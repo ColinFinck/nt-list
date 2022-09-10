@@ -8,7 +8,7 @@ use core::pin::Pin;
 use alloc::boxed::Box;
 use moveit::{new, New};
 
-use super::base::{Iter, IterMut, NtListEntry, NtListHead};
+use super::base::{Iter, IterMut, NtListHead};
 use super::traits::NtList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
@@ -52,7 +52,7 @@ where
             }))
             .with(|this| {
                 let this = this.get_unchecked_mut();
-                this.0.flink = this as *mut _ as usize as *mut NtListEntry<E, L>;
+                this.0.flink = (this as *mut Self).cast();
                 this.0.blink = this.0.flink;
             })
         }
@@ -267,6 +267,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::list::NtListEntry;
     use alloc::vec::Vec;
     use moveit::moveit;
 
@@ -456,7 +457,7 @@ mod tests {
         L: NtTypedList<T = NtList>,
     {
         let mut current;
-        let end = head.get_ref() as *const _ as usize as *mut NtListEntry<E, L>;
+        let end = (head.get_ref() as *const _ as *mut NtListHead<E, L>).cast();
 
         // Traverse the list in forward direction and collect all entries.
         current = head.flink;

@@ -138,7 +138,7 @@ where
     where
         F: FnMut(&mut E) -> bool,
     {
-        let mut previous = self as *mut _ as usize as *mut NtSingleListEntry<E, L>;
+        let mut previous = (self as *mut Self).cast();
         let mut current = self.next;
 
         while !current.is_null() {

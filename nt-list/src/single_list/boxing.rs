@@ -3,7 +3,7 @@
 
 use alloc::boxed::Box;
 
-use super::base::{Iter, IterMut, NtSingleListEntry, NtSingleListHead};
+use super::base::{Iter, IterMut, NtSingleListHead};
 use super::traits::NtSingleList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
@@ -139,7 +139,7 @@ where
     where
         F: FnMut(&mut E) -> bool,
     {
-        let mut previous = self as *mut _ as usize as *mut NtSingleListEntry<E, L>;
+        let mut previous = (self as *mut Self).cast();
         let mut current = self.0.next;
 
         while !current.is_null() {
@@ -188,6 +188,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::single_list::NtSingleListEntry;
 
     #[derive(NtSingleList)]
     enum MyList {}

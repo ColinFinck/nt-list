@@ -52,7 +52,7 @@ where
             })
             .with(|this| {
                 let this = this.get_unchecked_mut();
-                this.flink = this as *mut _ as usize as *mut NtListEntry<E, L>;
+                this.flink = (this as *mut Self).cast();
                 this.blink = this.flink;
             })
         }
@@ -114,7 +114,7 @@ where
 
     /// Returns the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
     pub(crate) fn end_marker(self: Pin<&Self>) -> *mut NtListEntry<E, L> {
-        self.get_ref() as *const _ as usize as *mut NtListEntry<E, L>
+        (self.get_ref() as *const _ as *mut Self).cast()
     }
 
     /// Returns the [`NtListEntry`] for the given element.
@@ -279,7 +279,7 @@ where
     L: NtTypedList<T = NtList>,
 {
     fn terminate(&mut self) {
-        self.flink = self.head as *const _ as usize as *const NtListEntry<E, L>;
+        self.flink = (self.head as *const NtListHead<E, L>).cast();
         self.blink = self.flink;
     }
 }
@@ -364,7 +364,7 @@ where
     L: NtTypedList<T = NtList>,
 {
     fn terminate(&mut self) {
-        self.flink = self.head as *const _ as usize as *mut NtListEntry<E, L>;
+        self.flink = (self.head as *mut NtListHead<E, L>).cast();
         self.blink = self.flink;
     }
 }
