@@ -119,9 +119,12 @@ where
 
     /// Returns the [`NtListEntry`] for the given element.
     pub(crate) fn entry(element: &mut E) -> *mut NtListEntry<E, L> {
-        let element_address = element as *mut _ as usize;
-        let entry_address = element_address + E::offset();
-        entry_address as *mut NtListEntry<E, L>
+        let element_ptr: *mut E = element;
+
+        // This is the canonical implementation of `byte_add`
+        let entry = unsafe { element_ptr.cast::<u8>().add(E::offset()).cast::<E>() };
+
+        entry.cast()
     }
 
     /// Provides a reference to the first element, or `None` if the list is empty.
@@ -146,7 +149,7 @@ where
     ///
     /// [`IsListEmpty`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-islistempty
     pub fn is_empty(self: Pin<&Self>) -> bool {
-        self.flink as usize == self.get_ref() as *const _ as usize
+        self.flink as *const NtListEntry<E, L> == (self.get_ref() as *const Self).cast()
     }
 
     /// Returns an iterator yielding references to each element of the list.
@@ -292,7 +295,7 @@ where
     type Item = &'a E;
 
     fn next(&mut self) -> Option<&'a E> {
-        if self.flink as usize == self.head as *const _ as usize {
+        if self.flink == (self.head as *const NtListHead<_, _>).cast() {
             None
         } else {
             unsafe {
@@ -321,7 +324,7 @@ where
     L: NtTypedList<T = NtList>,
 {
     fn next_back(&mut self) -> Option<&'a E> {
-        if self.blink as usize == self.head as *const _ as usize {
+        if self.blink == (self.head as *const NtListHead<_, _>).cast() {
             None
         } else {
             unsafe {
@@ -377,7 +380,7 @@ where
     type Item = &'a mut E;
 
     fn next(&mut self) -> Option<&'a mut E> {
-        if self.flink as usize == self.head as *const _ as usize {
+        if self.flink == (self.head as *mut NtListHead<_, _>).cast() {
             None
         } else {
             unsafe {
@@ -406,7 +409,7 @@ where
     L: NtTypedList<T = NtList>,
 {
     fn next_back(&mut self) -> Option<&'a mut E> {
-        if self.blink as usize == self.head as *const _ as usize {
+        if self.blink == (self.head as *mut NtListHead<_, _>).cast() {
             None
         } else {
             unsafe {
@@ -461,15 +464,20 @@ where
     }
 
     pub(crate) fn containing_record(&self) -> &E {
-        unsafe { &*(self.element_address() as *const E) }
+        unsafe { &*self.element_ptr() }
     }
 
     pub(crate) fn containing_record_mut(&mut self) -> &mut E {
-        unsafe { &mut *(self.element_address() as *mut E) }
+        unsafe { &mut *(self.element_ptr() as *mut E) }
     }
 
-    fn element_address(&self) -> usize {
-        self as *const _ as usize - E::offset()
+    fn element_ptr(&self) -> *const E {
+        let ptr = self as *const Self;
+
+        // This is the canonical implementation of `byte_add`
+        let ptr = unsafe { ptr.cast::<u8>().add(E::offset()).cast::<Self>() };
+
+        ptr.cast()
     }
 
     pub(crate) unsafe fn remove(&mut self) {
