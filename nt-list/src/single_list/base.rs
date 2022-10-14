@@ -3,7 +3,6 @@
 
 use core::iter::FusedIterator;
 use core::marker::PhantomData;
-use core::mem::MaybeUninit;
 use core::ptr;
 
 use super::traits::NtSingleList;
@@ -258,10 +257,8 @@ where
     /// Its fields are only initialized when an entry is pushed to a list.
     #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> Self {
-        unsafe {
-            Self {
-                next: MaybeUninit::uninit().assume_init(),
-            }
+        Self {
+            next: ptr::null_mut(),
         }
     }
 

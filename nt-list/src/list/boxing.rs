@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use core::marker::PhantomPinned;
-use core::mem::MaybeUninit;
 use core::pin::Pin;
+use core::ptr;
 
 use alloc::boxed::Box;
 use moveit::{new, New};
@@ -46,8 +46,8 @@ where
     pub fn new() -> impl New<Output = Self> {
         unsafe {
             new::of(Self(NtListHead {
-                flink: MaybeUninit::uninit().assume_init(),
-                blink: MaybeUninit::uninit().assume_init(),
+                flink: ptr::null_mut(),
+                blink: ptr::null_mut(),
                 pin: PhantomPinned,
             }))
             .with(|this| {
