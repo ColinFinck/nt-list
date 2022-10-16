@@ -48,9 +48,12 @@ where
 
     /// Returns the [`NtSingleListEntry`] for the given element.
     pub(crate) fn entry(element: &mut E) -> *mut NtSingleListEntry<E, L> {
-        let element_address = element as *mut _ as usize;
-        let entry_address = element_address + E::offset();
-        entry_address as *mut NtSingleListEntry<E, L>
+        let element_ptr = element as *mut E;
+
+        // This is the canonical implementation of `byte_add`
+        let entry = unsafe { element_ptr.cast::<u8>().add(E::offset()).cast::<E>() };
+
+        entry.cast()
     }
 
     /// Provides a reference to the first element, or `None` if the list is empty.
@@ -262,15 +265,20 @@ where
     }
 
     pub(crate) fn containing_record(&self) -> &E {
-        unsafe { &*(self.element_address() as *const E) }
+        unsafe { &*self.element_ptr() }
     }
 
     pub(crate) fn containing_record_mut(&mut self) -> &mut E {
-        unsafe { &mut *(self.element_address() as *mut E) }
+        unsafe { &mut *(self.element_ptr() as *mut E) }
     }
 
-    fn element_address(&self) -> usize {
-        self as *const _ as usize - E::offset()
+    fn element_ptr(&self) -> *const E {
+        let ptr = self as *const Self;
+
+        // This is the canonical implementation of `byte_sub`
+        let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
+
+        ptr.cast()
     }
 }
 
