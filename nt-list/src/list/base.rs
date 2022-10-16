@@ -474,8 +474,8 @@ where
     fn element_ptr(&self) -> *const E {
         let ptr = self as *const Self;
 
-        // This is the canonical implementation of `byte_add`
-        let ptr = unsafe { ptr.cast::<u8>().add(E::offset()).cast::<Self>() };
+        // This is the canonical implementation of `byte_sub`
+        let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
 
         ptr.cast()
     }
