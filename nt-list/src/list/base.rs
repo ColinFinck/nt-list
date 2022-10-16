@@ -119,7 +119,7 @@ where
 
     /// Returns the [`NtListEntry`] for the given element.
     pub(crate) fn entry(element: &mut E) -> *mut NtListEntry<E, L> {
-        let element_ptr: *mut E = element;
+        let element_ptr = element as *mut E;
 
         // This is the canonical implementation of `byte_add`
         let entry = unsafe { element_ptr.cast::<u8>().add(E::offset()).cast::<E>() };
