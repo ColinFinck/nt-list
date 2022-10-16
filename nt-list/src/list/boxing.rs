@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
 use core::marker::PhantomPinned;
-use core::mem::MaybeUninit;
 use core::pin::Pin;
+use core::ptr;
 
 use alloc::boxed::Box;
 use moveit::{new, New};
@@ -42,20 +42,17 @@ where
     /// This function substitutes [`InitializeListHead`] of the Windows NT API.
     ///
     /// [`InitializeListHead`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-initializelisthead
-    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> impl New<Output = Self> {
-        unsafe {
-            new::of(Self(NtListHead {
-                flink: MaybeUninit::uninit().assume_init(),
-                blink: MaybeUninit::uninit().assume_init(),
-                pin: PhantomPinned,
-            }))
-            .with(|this| {
-                let this = this.get_unchecked_mut();
-                this.0.flink = (this as *mut Self).cast();
-                this.0.blink = this.0.flink;
-            })
-        }
+        new::of(Self(NtListHead {
+            flink: ptr::null_mut(),
+            blink: ptr::null_mut(),
+            pin: PhantomPinned,
+        }))
+        .with(|this| {
+            let this = unsafe { this.get_unchecked_mut() };
+            this.0.flink = (this as *mut Self).cast();
+            this.0.blink = this.0.flink;
+        })
     }
 
     /// Moves all elements from `other` to the end of the list.

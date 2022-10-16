@@ -3,8 +3,8 @@
 
 use core::iter::FusedIterator;
 use core::marker::PhantomPinned;
-use core::mem::MaybeUninit;
 use core::pin::Pin;
+use core::ptr;
 
 use moveit::{new, New};
 
@@ -42,20 +42,17 @@ where
     /// This function substitutes [`InitializeListHead`] of the Windows NT API.
     ///
     /// [`InitializeListHead`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-initializelisthead
-    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> impl New<Output = Self> {
-        unsafe {
-            new::of(Self {
-                flink: MaybeUninit::uninit().assume_init(),
-                blink: MaybeUninit::uninit().assume_init(),
-                pin: PhantomPinned,
-            })
-            .with(|this| {
-                let this = this.get_unchecked_mut();
-                this.flink = (this as *mut Self).cast();
-                this.blink = this.flink;
-            })
-        }
+        new::of(Self {
+            flink: ptr::null_mut(),
+            blink: ptr::null_mut(),
+            pin: PhantomPinned,
+        })
+        .with(|this| {
+            let this = unsafe { this.get_unchecked_mut() };
+            this.flink = (this as *mut Self).cast();
+            this.blink = this.flink;
+        })
     }
 
     /// Moves all elements from `other` to the end of the list.
@@ -449,14 +446,11 @@ where
     /// Allows the creation of an `NtListEntry`, but leaves all fields uninitialized.
     ///
     /// Its fields are only initialized when an entry is pushed to a list.
-    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> Self {
-        unsafe {
-            Self {
-                flink: MaybeUninit::uninit().assume_init(),
-                blink: MaybeUninit::uninit().assume_init(),
-                pin: PhantomPinned,
-            }
+        Self {
+            flink: ptr::null_mut(),
+            blink: ptr::null_mut(),
+            pin: PhantomPinned,
         }
     }
 
