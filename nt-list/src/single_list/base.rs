@@ -255,7 +255,6 @@ where
     /// Allows the creation of an `NtSingleListEntry`, but leaves all fields uninitialized.
     ///
     /// Its fields are only initialized when an entry is pushed to a list.
-    #[allow(clippy::uninit_assumed_init)]
     pub fn new() -> Self {
         Self {
             next: ptr::null_mut(),
