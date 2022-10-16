@@ -19,7 +19,9 @@ pub trait NtListType: Sealed {}
 /// The easiest way to implement this trait is to use `derive` with the appropriate list type
 /// ([`NtList`] or [`NtSingleList`]):
 ///
-/// ```ignore
+/// ```
+/// # use nt_list::list::NtList;
+///
 /// #[derive(NtList)]
 /// enum MyList {}
 /// ```
@@ -43,7 +45,13 @@ pub trait NtTypedList {
 /// The easiest way to implement this trait for all entry fields of a structure is to use
 /// `derive` on the structure:
 ///
-/// ```ignore
+/// ```
+/// # use nt_list::NtListElement;
+/// # use nt_list::list::{NtList, NtListEntry};
+///
+/// # #[derive(NtList)]
+/// # enum MyList {}
+///
 /// #[derive(NtListElement)]
 /// #[repr(C)]
 /// struct MyElement {
@@ -83,7 +91,13 @@ pub use nt_list_macros::NtListElement;
 /// The easiest way to implement this trait is to use the `#[boxed]` attribute for the appropriate
 /// entry field and use `derive` on the structure:
 ///
-/// ```ignore
+/// ```
+/// # use nt_list::NtListElement;
+/// # use nt_list::list::{NtList, NtListEntry};
+///
+/// # #[derive(NtList)]
+/// # enum MyList {}
+///
 /// #[derive(NtListElement)]
 /// #[repr(C)]
 /// struct MyElement {

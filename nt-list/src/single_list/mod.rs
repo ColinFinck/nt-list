@@ -11,7 +11,9 @@
 //!
 //! The empty enum is designated as a singly linked list via:
 //!
-//! ```ignore
+//! ```
+//! # use nt_list::single_list::NtSingleList;
+//!
 //! #[derive(NtSingleList)]
 //! enum MyList {}
 //! ```
@@ -21,7 +23,13 @@
 //! A single [`NtSingleListEntry`] field can be marked with `#[boxed]` to make that list own the elements
 //! and handle their memory allocation and deallocation:
 //!
-//! ```ignore
+//! ```
+//! # use nt_list::NtListElement;
+//! # use nt_list::single_list::{NtSingleList, NtSingleListEntry};
+//!
+//! # #[derive(NtSingleList)]
+//! # enum MyList {}
+//!
 //! #[derive(Default, NtListElement)]
 //! #[repr(C)]
 //! struct MyElement {
@@ -33,10 +41,24 @@
 //!
 //! You can then manage that list using the safe [`NtBoxingSingleListHead`] interface:
 //!
-//! ```ignore
+//! ```
+//! # use nt_list::NtListElement;
+//! # use nt_list::single_list::{NtBoxingSingleListHead, NtSingleList, NtSingleListEntry};
+//!
+//! # #[derive(NtSingleList)]
+//! # enum MyList {}
+//!
+//! # #[derive(Default, NtListElement)]
+//! # #[repr(C)]
+//! # struct MyElement {
+//! #     #[boxed]
+//! #     entry: NtSingleListEntry<Self, MyList>,
+//! #     value: i32,
+//! # }
+//!
 //! let mut list = NtBoxingSingleListHead::<MyElement, MyList>::new();
 //!
-//! list.push_back(MyElement {
+//! list.push_front(MyElement {
 //!     value: 42,
 //!     ..Default::default()
 //! });

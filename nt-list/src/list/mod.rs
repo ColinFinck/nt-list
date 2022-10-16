@@ -11,7 +11,9 @@
 //!
 //! The empty enum is designated as a doubly linked list via:
 //!
-//! ```ignore
+//! ```
+//! # use nt_list::list::NtList;
+//!
 //! #[derive(NtList)]
 //! enum MyList {}
 //! ```
@@ -21,7 +23,13 @@
 //! A single [`NtListEntry`] field can be marked with `#[boxed]` to make that list own the elements
 //! and handle their memory allocation and deallocation:
 //!
-//! ```ignore
+//! ```
+//! # use nt_list::NtListElement;
+//! # use nt_list::list::{NtList, NtListEntry};
+//!
+//! # #[derive(NtList)]
+//! # enum MyList {}
+//!
 //! #[derive(Default, NtListElement)]
 //! #[repr(C)]
 //! struct MyElement {
@@ -33,7 +41,22 @@
 //!
 //! You can then manage that list using the safe [`NtBoxingListHead`] interface:
 //!
-//! ```ignore
+//! ```
+//! # use moveit::moveit;
+//! # use nt_list::NtListElement;
+//! # use nt_list::list::{NtBoxingListHead, NtList, NtListEntry};
+//!
+//! # #[derive(NtList)]
+//! # enum MyList {}
+//!
+//! # #[derive(Default, NtListElement)]
+//! # #[repr(C)]
+//! # struct MyElement {
+//! #     #[boxed]
+//! #     entry: NtListEntry<Self, MyList>,
+//! #     value: i32,
+//! # }
+//!
 //! moveit! {
 //!     let mut list = NtBoxingListHead::<MyElement, MyList>::new();
 //! }

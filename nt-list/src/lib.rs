@@ -38,7 +38,10 @@
 //!
 //! All of this taken together looks like:
 //!
-//! ```ignore
+//! ```
+//! # use nt_list::NtListElement;
+//! # use nt_list::single_list::{NtBoxingSingleListHead, NtSingleList, NtSingleListEntry};
+//!
 //! #[derive(NtSingleList)]
 //! enum MyList {}
 //!
@@ -53,7 +56,7 @@
 //! fn test() {
 //!     let mut list = NtBoxingSingleListHead::<MyElement, MyList>::new();
 //!
-//!     list.push_back(MyElement {
+//!     list.push_front(MyElement {
 //!         value: 42,
 //!         ..Default::default()
 //!     });
