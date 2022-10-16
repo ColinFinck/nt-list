@@ -105,7 +105,7 @@ where
         // Traverse the list in the old-fashioned way and deallocate each element.
         while current != end_marker {
             unsafe {
-                let element = (&mut *current).containing_record_mut();
+                let element = (*current).containing_record_mut();
                 current = (*current).flink;
                 drop(Box::from_raw(element));
             }

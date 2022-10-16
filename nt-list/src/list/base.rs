@@ -87,14 +87,14 @@ where
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn back(self: Pin<&Self>) -> Option<&E> {
-        (!self.is_empty()).then(|| (&*self.blink).containing_record())
+        (!self.is_empty()).then(|| (*self.blink).containing_record())
     }
 
     /// Provides a mutable reference to the last element, or `None` if the list is empty.
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn back_mut(self: Pin<&mut Self>) -> Option<&mut E> {
-        (!self.as_ref().is_empty()).then(|| (&mut *self.blink).containing_record_mut())
+        (!self.as_ref().is_empty()).then(|| (*self.blink).containing_record_mut())
     }
 
     /// Removes all elements from the list.
@@ -128,14 +128,14 @@ where
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn front(self: Pin<&Self>) -> Option<&E> {
-        (!self.is_empty()).then(|| (&*self.flink).containing_record())
+        (!self.is_empty()).then(|| (*self.flink).containing_record())
     }
 
     /// Provides a mutable reference to the first element, or `None` if the list is empty.
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn front_mut(self: Pin<&mut Self>) -> Option<&mut E> {
-        (!self.as_ref().is_empty()).then(|| (&mut *self.flink).containing_record_mut())
+        (!self.as_ref().is_empty()).then(|| (*self.flink).containing_record_mut())
     }
 
     /// Returns `true` if the list is empty.
@@ -296,7 +296,7 @@ where
             None
         } else {
             unsafe {
-                let element = (&*self.flink).containing_record();
+                let element = (*self.flink).containing_record();
 
                 if self.flink == self.blink {
                     // We are crossing the other end of the iterator and must not iterate any further.
@@ -325,7 +325,7 @@ where
             None
         } else {
             unsafe {
-                let element = (&*self.blink).containing_record();
+                let element = (*self.blink).containing_record();
 
                 if self.blink == self.flink {
                     // We are crossing the other end of the iterator and must not iterate any further.
@@ -381,7 +381,7 @@ where
             None
         } else {
             unsafe {
-                let element = (&mut *self.flink).containing_record_mut();
+                let element = (*self.flink).containing_record_mut();
 
                 if self.flink == self.blink {
                     // We are crossing the other end of the iterator and must not iterate any further.
@@ -410,7 +410,7 @@ where
             None
         } else {
             unsafe {
-                let element = (&mut *self.blink).containing_record_mut();
+                let element = (*self.blink).containing_record_mut();
 
                 if self.blink == self.flink {
                     // We are crossing the other end of the iterator and must not iterate any further.

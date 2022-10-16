@@ -61,7 +61,7 @@ where
         // Traverse the list in the old-fashioned way and deallocate each element.
         while !current.is_null() {
             unsafe {
-                let element = (&mut *current).containing_record_mut();
+                let element = (*current).containing_record_mut();
                 current = (*current).next;
                 drop(Box::from_raw(element));
             }
@@ -145,7 +145,7 @@ where
 
         while !current.is_null() {
             unsafe {
-                let element = (&mut *current).containing_record_mut();
+                let element = (*current).containing_record_mut();
 
                 if f(element) {
                     previous = current;

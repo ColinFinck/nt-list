@@ -60,14 +60,14 @@ where
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn front(&self) -> Option<&E> {
-        (!self.is_empty()).then(|| (&*self.next).containing_record())
+        (!self.is_empty()).then(|| (*self.next).containing_record())
     }
 
     /// Provides a mutable reference to the first element, or `None` if the list is empty.
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn front_mut(&mut self) -> Option<&mut E> {
-        (!self.is_empty()).then(|| (&mut *self.next).containing_record_mut())
+        (!self.is_empty()).then(|| (*self.next).containing_record_mut())
     }
 
     /// Returns `true` if the list is empty.
@@ -144,7 +144,7 @@ where
         let mut current = self.next;
 
         while !current.is_null() {
-            let element = (&mut *current).containing_record_mut();
+            let element = (*current).containing_record_mut();
 
             if f(element) {
                 previous = current;
@@ -190,7 +190,7 @@ where
             None
         } else {
             unsafe {
-                let element = (&*self.current).containing_record();
+                let element = (*self.current).containing_record();
                 self.current = (*self.current).next;
                 Some(element)
             }
@@ -228,7 +228,7 @@ where
             None
         } else {
             unsafe {
-                let element = (&mut *self.current).containing_record_mut();
+                let element = (*self.current).containing_record_mut();
                 self.current = (*self.current).next;
                 Some(element)
             }
