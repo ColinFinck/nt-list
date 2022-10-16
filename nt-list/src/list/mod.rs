@@ -67,6 +67,5 @@ mod traits;
 
 pub use base::*;
 #[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub use boxing::*;
 pub use traits::*;

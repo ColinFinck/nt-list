@@ -22,6 +22,7 @@ use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 ///
 /// [`SINGLE_LIST_ENTRY`]: https://docs.microsoft.com/en-us/windows/win32/api/ntdef/ns-ntdef-single_list_entry
 #[repr(transparent)]
+#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
 pub struct NtBoxingSingleListHead<
     E: NtBoxedListElement<L = L> + NtListElement<L>,
     L: NtTypedList<T = NtSingleList>,
