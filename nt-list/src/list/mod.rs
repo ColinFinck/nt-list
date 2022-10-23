@@ -13,7 +13,7 @@
 //!
 //! ```
 //! # use nt_list::list::NtList;
-//!
+//! #
 //! #[derive(NtList)]
 //! enum MyList {}
 //! ```
@@ -26,10 +26,10 @@
 //! ```
 //! # use nt_list::NtListElement;
 //! # use nt_list::list::{NtList, NtListEntry};
-//!
+//! #
 //! # #[derive(NtList)]
 //! # enum MyList {}
-//!
+//! #
 //! #[derive(Default, NtListElement)]
 //! #[repr(C)]
 //! struct MyElement {
@@ -45,10 +45,10 @@
 //! # use moveit::moveit;
 //! # use nt_list::NtListElement;
 //! # use nt_list::list::{NtBoxingListHead, NtList, NtListEntry};
-//!
+//! #
 //! # #[derive(NtList)]
 //! # enum MyList {}
-//!
+//! #
 //! # #[derive(Default, NtListElement)]
 //! # #[repr(C)]
 //! # struct MyElement {
@@ -56,7 +56,7 @@
 //! #     entry: NtListEntry<Self, MyList>,
 //! #     value: i32,
 //! # }
-//!
+//! #
 //! moveit! {
 //!     let mut list = NtBoxingListHead::<MyElement, MyList>::new();
 //! }

@@ -41,7 +41,7 @@
 //! ```
 //! # use nt_list::NtListElement;
 //! # use nt_list::single_list::{NtBoxingSingleListHead, NtSingleList, NtSingleListEntry};
-//!
+//! #
 //! #[derive(NtSingleList)]
 //! enum MyList {}
 //!

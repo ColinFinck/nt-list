@@ -13,7 +13,7 @@
 //!
 //! ```
 //! # use nt_list::single_list::NtSingleList;
-//!
+//! #
 //! #[derive(NtSingleList)]
 //! enum MyList {}
 //! ```
@@ -26,10 +26,10 @@
 //! ```
 //! # use nt_list::NtListElement;
 //! # use nt_list::single_list::{NtSingleList, NtSingleListEntry};
-//!
+//! #
 //! # #[derive(NtSingleList)]
 //! # enum MyList {}
-//!
+//! #
 //! #[derive(Default, NtListElement)]
 //! #[repr(C)]
 //! struct MyElement {
@@ -44,10 +44,10 @@
 //! ```
 //! # use nt_list::NtListElement;
 //! # use nt_list::single_list::{NtBoxingSingleListHead, NtSingleList, NtSingleListEntry};
-//!
+//! #
 //! # #[derive(NtSingleList)]
 //! # enum MyList {}
-//!
+//! #
 //! # #[derive(Default, NtListElement)]
 //! # #[repr(C)]
 //! # struct MyElement {
@@ -55,7 +55,7 @@
 //! #     entry: NtSingleListEntry<Self, MyList>,
 //! #     value: i32,
 //! # }
-//!
+//! #
 //! let mut list = NtBoxingSingleListHead::<MyElement, MyList>::new();
 //!
 //! list.push_front(MyElement {

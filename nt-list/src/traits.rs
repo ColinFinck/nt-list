@@ -21,7 +21,7 @@ pub trait NtListType: Sealed {}
 ///
 /// ```
 /// # use nt_list::list::NtList;
-///
+/// #
 /// #[derive(NtList)]
 /// enum MyList {}
 /// ```
@@ -48,10 +48,10 @@ pub trait NtTypedList {
 /// ```
 /// # use nt_list::NtListElement;
 /// # use nt_list::list::{NtList, NtListEntry};
-///
+/// #
 /// # #[derive(NtList)]
 /// # enum MyList {}
-///
+/// #
 /// #[derive(NtListElement)]
 /// #[repr(C)]
 /// struct MyElement {
@@ -105,10 +105,10 @@ pub use nt_list_macros::NtListElement;
 /// ```
 /// # use nt_list::NtListElement;
 /// # use nt_list::list::{NtList, NtListEntry};
-///
+/// #
 /// # #[derive(NtList)]
 /// # enum MyList {}
-///
+/// #
 /// #[derive(NtListElement)]
 /// #[repr(C)]
 /// struct MyElement {
