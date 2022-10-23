@@ -36,7 +36,7 @@ pub trait NtTypedList {
 
 /// Designates a structure as a list element with an entry field (e.g. [`NtListEntry`]) of a
 /// particular NT list.
-///
+/// The entry field's position inside the list is given by implementing the `offset` method.
 /// The NT list is identified via the enum that implements [`NtTypedList`].
 ///
 /// You can implement this trait multiple times for a structure if it is part of multiple
@@ -60,8 +60,19 @@ pub trait NtTypedList {
 /// }
 /// ```
 ///
+/// # Safety
+///
+/// This trait is unsafe, because the compiler cannot verify that the `offset` method has been
+/// implemented correctly.
+/// Safe functions rely on the offset pointing to an actual [`NtListEntry`] or [`NtSingleListEntry`].
+/// This trait must also only be implemented for structures marked with `#[repr(C)]`.
+///
+/// It is therefore recommended to only derive this trait as described above and never implement
+/// it manually.
+///
 /// [`NtListEntry`]: crate::list::NtListEntry
-pub trait NtListElement<L: NtTypedList> {
+/// [`NtSingleListEntry`]: crate::single_list::NtSingleListEntry
+pub unsafe trait NtListElement<L: NtTypedList> {
     /// Returns the byte offset to the entry field relative to the beginning of the
     /// element structure.
     fn offset() -> usize;

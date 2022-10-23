@@ -84,7 +84,7 @@ pub fn derive_list_struct_trait(input: DeriveInput) -> Result<TokenStream> {
             }
 
             quote! {
-                impl ::nt_list::NtListElement<#list_ty> for #ident {
+                unsafe impl ::nt_list::NtListElement<#list_ty> for #ident {
                     fn offset() -> usize {
                         let base = ::core::mem::MaybeUninit::<#ident>::uninit();
                         let base_ptr = base.as_ptr();
