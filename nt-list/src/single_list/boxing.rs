@@ -1,9 +1,11 @@
 // Copyright 2022 Colin Finck <colin@reactos.org>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+use core::ptr;
+
 use alloc::boxed::Box;
 
-use super::base::{Iter, IterMut, NtSingleListHead};
+use super::base::{Iter, IterMut, NtSingleListEntry, NtSingleListHead};
 use super::traits::NtSingleList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
@@ -186,6 +188,46 @@ where
     }
 }
 
+impl<E, L> FromIterator<Box<E>> for NtBoxingSingleListHead<E, L>
+where
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtTypedList<T = NtSingleList>,
+{
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = Box<E>>,
+    {
+        let mut list = NtBoxingSingleListHead::<E, L>::new();
+        let mut previous =
+            (&mut list.0 as *mut NtSingleListHead<E, L>).cast::<NtSingleListEntry<E, L>>();
+
+        for element in iter.into_iter() {
+            unsafe {
+                let entry = NtSingleListHead::entry(Box::leak(element));
+
+                (*entry).next = ptr::null_mut();
+                (*previous).next = entry;
+                previous = entry;
+            }
+        }
+
+        list
+    }
+}
+
+impl<E, L> FromIterator<E> for NtBoxingSingleListHead<E, L>
+where
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtTypedList<T = NtSingleList>,
+{
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = E>,
+    {
+        iter.into_iter().map(Box::new).collect()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -208,6 +250,19 @@ mod tests {
                 value,
                 ..Default::default()
             }
+        }
+    }
+
+    #[test]
+    fn test_from_iter() {
+        let integers = [0, 1, 2, 3, 4, 5];
+        let list = integers
+            .into_iter()
+            .map(MyElement::new)
+            .collect::<NtBoxingSingleListHead<MyElement, MyList>>();
+
+        for (i, element) in integers.into_iter().zip(list.iter()) {
+            assert_eq!(i, element.value);
         }
     }
 
