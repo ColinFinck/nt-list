@@ -262,6 +262,51 @@ where
     }
 }
 
+impl<E, L> Extend<Box<E>> for Pin<&mut NtBoxingListHead<E, L>>
+where
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtTypedList<T = NtList>,
+{
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = Box<E>>,
+    {
+        let end_marker = self.as_ref().inner().end_marker();
+        let mut previous = self.as_ref().inner().blink;
+
+        for element in iter.into_iter() {
+            // We could use `NtBoxingListHead::push_back` here, but this manual implementation
+            // is slightly optimized (doesn't modify list head's `blink` on every iteration).
+            unsafe {
+                let entry = NtListHead::entry(Box::leak(element));
+
+                (*entry).flink = end_marker;
+                (*entry).blink = previous;
+                (*previous).flink = entry;
+
+                previous = entry;
+            }
+        }
+
+        unsafe {
+            self.as_mut().get_unchecked_mut().0.blink = previous;
+        }
+    }
+}
+
+impl<E, L> Extend<E> for Pin<&mut NtBoxingListHead<E, L>>
+where
+    E: NtBoxedListElement<L = L> + NtListElement<L>,
+    L: NtTypedList<T = NtList>,
+{
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = E>,
+    {
+        self.extend(iter.into_iter().map(Box::new))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -340,6 +385,24 @@ mod tests {
         assert_eq!(list.as_mut().back_mut().unwrap().value, 3);
         assert_eq!(list.as_ref().front().unwrap().value, 0);
         assert_eq!(list.as_mut().front_mut().unwrap().value, 0);
+    }
+
+    #[test]
+    fn test_extend() {
+        let integers = [0, 1, 2, 3, 4, 5];
+
+        moveit! {
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
+        }
+
+        list.as_mut()
+            .extend(integers.into_iter().map(MyElement::new));
+
+        for (i, element) in integers.into_iter().zip(list.as_ref().iter()) {
+            assert_eq!(i, element.value);
+        }
+
+        verify_all_links(list.as_ref().inner());
     }
 
     #[test]
