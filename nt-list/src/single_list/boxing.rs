@@ -202,11 +202,14 @@ where
             (&mut list.0 as *mut NtSingleListHead<E, L>).cast::<NtSingleListEntry<E, L>>();
 
         for element in iter.into_iter() {
+            // `NtBoxingSingleListHead` only comes with a `push_front` method, so we have to push
+            // elements by hand and keep track of the last one.
             unsafe {
                 let entry = NtSingleListHead::entry(Box::leak(element));
 
                 (*entry).next = ptr::null_mut();
                 (*previous).next = entry;
+
                 previous = entry;
             }
         }
