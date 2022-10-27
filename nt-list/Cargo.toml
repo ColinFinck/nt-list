@@ -1,6 +1,6 @@
 [package]
 name = "nt-list"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Colin Finck <colin@reactos.org>"]
 description = "Compatible, type-safe, and idiomatic Rust implementations of Windows NT Linked Lists"
 homepage = "https://github.com/ColinFinck/nt-list"
@@ -15,7 +15,7 @@ categories = ["data-structures", "no-std", "os::windows-apis"]
 
 [dependencies]
 moveit = "0.5.0"
-nt-list_macros = { path = "../nt-list_macros", version = "0.1.0" }
+nt-list_macros = { path = "../nt-list_macros", version = "0.2.0" }
 
 [features]
 default = ["alloc"]

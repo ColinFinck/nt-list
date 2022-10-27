@@ -1,6 +1,6 @@
 [package]
 name = "nt-list_macros"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Colin Finck <colin@reactos.org>"]
 description = "Macros for nt-list"
 edition = "2021"
