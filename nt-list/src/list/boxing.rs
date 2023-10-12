@@ -372,6 +372,74 @@ mod tests {
     }
 
     #[test]
+    fn test_clear_and_append() {
+        // Append two lists of equal size.
+        moveit! {
+            let mut list1 = NtBoxingListHead::<MyElement, MyList>::new();
+            let mut list2 = NtBoxingListHead::<MyElement, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list1.as_mut().push_back(MyElement::new(i));
+            list2.as_mut().push_back(MyElement::new(i));
+        }
+
+        list1.as_mut().append(list2.as_mut());
+
+        assert_eq!(list1.as_ref().len(), 20);
+        assert_eq!(list2.as_ref().len(), 0);
+
+        for (i, element) in (0..10).chain(0..10).zip(list1.as_ref().iter()) {
+            assert_eq!(i, element.value);
+        }
+
+        verify_all_links(list1.as_ref().inner());
+
+        // Add more elements to both lists
+        list1.as_mut().push_back(MyElement::new(21));
+        list1.as_mut().push_front(MyElement::new(22));
+
+        list2.as_mut().push_back(MyElement::new(21));
+        list2.as_mut().push_front(MyElement::new(22));
+
+        // Append the final list to a cleared list.
+        moveit! {
+            let mut list3 = NtBoxingListHead::<MyElement, MyList>::new();
+        }
+
+        list3.as_mut().clear();
+        list3.as_mut().append(list1.as_mut());
+
+        assert_eq!(list3.as_ref().len(), 22);
+        assert_eq!(list1.as_ref().len(), 0);
+
+        verify_all_links(list3.as_ref().inner());
+    }
+
+    #[test]
+    fn test_clear_and_push() {
+        moveit! {
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
+        }
+
+        list.as_mut().clear();
+
+        for i in 0..=3 {
+            list.as_mut().push_back(MyElement::new(i));
+        }
+        for i in 4..=6 {
+            list.as_mut().push_front(MyElement::new(i));
+        }
+
+        assert_eq!(list.as_ref().back().unwrap().value, 3);
+        assert_eq!(list.as_mut().back_mut().unwrap().value, 3);
+        assert_eq!(list.as_ref().front().unwrap().value, 6);
+        assert_eq!(list.as_mut().front_mut().unwrap().value, 6);
+
+        verify_all_links(list.as_ref().inner());
+    }
+
+    #[test]
     fn test_back_and_front() {
         moveit! {
             let mut list = NtBoxingListHead::<MyElement, MyList>::new();
