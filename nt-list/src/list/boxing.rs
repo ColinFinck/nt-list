@@ -84,8 +84,8 @@ where
     ///
     /// Unlike [`NtListHead::clear`], this operation computes in *O*(*n*) time, because it
     /// needs to traverse all elements to deallocate them.
-    pub fn clear(self: Pin<&mut Self>) {
-        let end_marker = self.as_ref().inner().end_marker();
+    pub fn clear(mut self: Pin<&mut Self>) {
+        let end_marker = self.as_mut().inner_mut().end_marker_mut();
 
         // Get the link to the first element before it's being reset.
         let mut current = self.0.flink;
@@ -271,7 +271,7 @@ where
     where
         T: IntoIterator<Item = Box<E>>,
     {
-        let end_marker = self.as_ref().inner().end_marker();
+        let end_marker = self.as_mut().inner_mut().end_marker_mut();
         let mut previous = self.as_ref().inner().blink;
 
         for element in iter.into_iter() {

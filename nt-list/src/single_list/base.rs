@@ -269,11 +269,20 @@ where
     }
 
     pub(crate) fn containing_record_mut(&mut self) -> &mut E {
-        unsafe { &mut *(self.element_ptr() as *mut E) }
+        unsafe { &mut *self.element_ptr_mut() }
     }
 
     fn element_ptr(&self) -> *const E {
         let ptr = self as *const Self;
+
+        // This is the canonical implementation of `byte_sub`
+        let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
+
+        ptr.cast()
+    }
+
+    fn element_ptr_mut(&mut self) -> *mut E {
+        let ptr = self as *mut Self;
 
         // This is the canonical implementation of `byte_sub`
         let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };

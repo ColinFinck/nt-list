@@ -61,7 +61,7 @@ where
     /// After this operation, `other` becomes empty.
     ///
     /// This operation computes in *O*(*1*) time.
-    pub unsafe fn append(self: Pin<&mut Self>, other: Pin<&mut Self>) {
+    pub unsafe fn append(mut self: Pin<&mut Self>, mut other: Pin<&mut Self>) {
         if other.as_ref().is_empty() {
             return;
         }
@@ -73,11 +73,11 @@ where
         // - The last element of `self` shall be changed to the last element of `other`.
         (*self.blink).flink = other.flink;
         (*other.flink).blink = self.blink;
-        (*other.blink).flink = self.as_ref().end_marker();
+        (*other.blink).flink = self.as_mut().end_marker_mut();
         self.get_unchecked_mut().blink = other.blink;
 
         // Clear `other` without touching any of its elements.
-        let other_end_marker = other.as_ref().end_marker();
+        let other_end_marker = other.as_mut().end_marker_mut();
         let other_mut = other.get_unchecked_mut();
         other_mut.flink = other_end_marker;
         other_mut.blink = other_end_marker;
@@ -101,17 +101,22 @@ where
     ///
     /// This operation computes in *O*(*1*) time, because it only resets the forward and
     /// backward links of the header.
-    pub fn clear(self: Pin<&mut Self>) {
-        let end_marker = self.as_ref().end_marker();
+    pub fn clear(mut self: Pin<&mut Self>) {
+        let end_marker = self.as_mut().end_marker_mut();
         let self_mut = unsafe { self.get_unchecked_mut() };
 
         self_mut.flink = end_marker;
         self_mut.blink = end_marker;
     }
 
-    /// Returns the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
-    pub(crate) fn end_marker(self: Pin<&Self>) -> *mut NtListEntry<E, L> {
+    /// Returns a const pointer to the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
+    pub(crate) fn end_marker(self: Pin<&Self>) -> *const NtListEntry<E, L> {
         (self.get_ref() as *const _ as *mut Self).cast()
+    }
+
+    /// Returns a mutable pointer to the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
+    pub(crate) fn end_marker_mut(self: Pin<&mut Self>) -> *mut NtListEntry<E, L> {
+        (unsafe { self.get_unchecked_mut() } as *mut Self).cast()
     }
 
     /// Returns the [`NtListEntry`] for the given element.
@@ -211,11 +216,11 @@ where
     /// This operation computes in *O*(*1*) time.
     ///
     /// [`InsertTailList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-inserttaillist
-    pub unsafe fn push_back(self: Pin<&mut Self>, element: &mut E) {
+    pub unsafe fn push_back(mut self: Pin<&mut Self>, element: &mut E) {
         let entry = Self::entry(element);
 
         let old_blink = self.blink;
-        (*entry).flink = self.as_ref().end_marker();
+        (*entry).flink = self.as_mut().end_marker_mut();
         (*entry).blink = old_blink;
         (*old_blink).flink = entry;
         self.get_unchecked_mut().blink = entry;
@@ -228,12 +233,12 @@ where
     /// This operation computes in *O*(*1*) time.
     ///
     /// [`InsertHeadList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-insertheadlist
-    pub unsafe fn push_front(self: Pin<&mut Self>, element: &mut E) {
+    pub unsafe fn push_front(mut self: Pin<&mut Self>, element: &mut E) {
         let entry = Self::entry(element);
 
         let old_flink = self.flink;
         (*entry).flink = old_flink;
-        (*entry).blink = self.as_ref().end_marker();
+        (*entry).blink = self.as_mut().end_marker_mut();
         (*old_flink).blink = entry;
         self.get_unchecked_mut().flink = entry;
     }
@@ -462,11 +467,20 @@ where
     }
 
     pub(crate) fn containing_record_mut(&mut self) -> &mut E {
-        unsafe { &mut *(self.element_ptr() as *mut E) }
+        unsafe { &mut *self.element_ptr_mut() }
     }
 
     fn element_ptr(&self) -> *const E {
         let ptr = self as *const Self;
+
+        // This is the canonical implementation of `byte_sub`
+        let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
+
+        ptr.cast()
+    }
+
+    fn element_ptr_mut(&mut self) -> *mut E {
+        let ptr = self as *mut Self;
 
         // This is the canonical implementation of `byte_sub`
         let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
