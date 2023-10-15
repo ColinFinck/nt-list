@@ -8,7 +8,7 @@ use core::ptr;
 use alloc::boxed::Box;
 use moveit::{new, New};
 
-use super::base::{Iter, IterMut, NtListHead};
+use super::base::{Iter, IterMut, NtListEntry, NtListHead};
 use super::traits::NtList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
@@ -105,7 +105,7 @@ where
         // Traverse the list in the old-fashioned way and deallocate each element.
         while current != end_marker {
             unsafe {
-                let element = (*current).containing_record_mut();
+                let element = NtListEntry::containing_record_mut(current);
                 current = (*current).flink;
                 drop(Box::from_raw(element));
             }

@@ -63,9 +63,10 @@ where
         // Traverse the list in the old-fashioned way and deallocate each element.
         while !current.is_null() {
             unsafe {
-                let element = (*current).containing_record_mut();
-                current = (*current).next;
+                let next = (*current).next;
+                let element = NtSingleListEntry::<E, L>::containing_record_mut(current);
                 drop(Box::from_raw(element));
+                current = next;
             }
         }
     }
@@ -147,14 +148,19 @@ where
 
         while !current.is_null() {
             unsafe {
-                let element = (*current).containing_record_mut();
+                // Note: we can soundly store the next pointer ahead of time,
+                // since the only methods that can modify the next pointer are
+                // `NtSingleListEntry::{push,pop}_front`, and both of those
+                // are unsafe.
+                let next = (*current).next;
+                let element = NtSingleListEntry::containing_record_mut(current);
 
                 if f(element) {
                     previous = current;
-                    current = (*current).next;
+                    current = next;
                 } else {
-                    (*previous).next = (*current).next;
-                    current = (*current).next;
+                    (*previous).next = next;
+                    current = next;
                     drop(Box::from_raw(element));
                 }
             }
