@@ -460,25 +460,17 @@ where
     }
 
     pub(crate) unsafe fn containing_record<'a>(ptr: *const Self) -> &'a E {
-        unsafe { &*Self::element_ptr(ptr) }
+        // This is the canonical implementation of `byte_sub`
+        let element_ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
+
+        unsafe { &*element_ptr.cast() }
     }
 
     pub(crate) unsafe fn containing_record_mut<'a>(ptr: *mut Self) -> &'a mut E {
-        unsafe { &mut *Self::element_ptr_mut(ptr) }
-    }
-
-    fn element_ptr(ptr: *const Self) -> *const E {
         // This is the canonical implementation of `byte_sub`
-        let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
+        let element_ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
 
-        ptr.cast()
-    }
-
-    fn element_ptr_mut(ptr: *mut Self) -> *mut E {
-        // This is the canonical implementation of `byte_sub`
-        let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
-
-        ptr.cast()
+        unsafe { &mut *element_ptr.cast() }
     }
 
     pub(crate) unsafe fn remove(&mut self) {
