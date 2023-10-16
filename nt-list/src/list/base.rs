@@ -108,7 +108,7 @@ where
 
     /// Returns a const pointer to the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
     pub(crate) fn end_marker(self: Pin<&Self>) -> *const NtListEntry<E, L> {
-        (self.get_ref() as *const _ as *mut Self).cast()
+        (self.get_ref() as *const Self).cast()
     }
 
     /// Returns a mutable pointer to the "end marker element" (which is the address of our own `NtListHead`, but interpreted as a `NtListEntry` element address).
