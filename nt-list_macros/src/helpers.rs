@@ -1,11 +1,11 @@
-// Copyright 2022 Colin Finck <colin@reactos.org>
+// Copyright 2022-2023 Colin Finck <colin@reactos.org>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use proc_macro2::{Delimiter, TokenStream, TokenTree};
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    AttrStyle, Data, DeriveInput, Error, Field, Fields, GenericArgument, Ident, PathArguments,
-    Result, Type, TypePath,
+    Data, DeriveInput, Error, Field, Fields, GenericArgument, Ident, PathArguments, Result, Type,
+    TypePath,
 };
 
 /// Helper function to derive the trait that designates an empty enum as a list.
@@ -122,27 +122,21 @@ pub fn derive_list_struct_trait(input: DeriveInput) -> Result<TokenStream> {
 ///
 /// This also works when multiple `repr` attributes are used, or a single `repr` attribute has multiple entries.
 fn has_repr_c(input: &DeriveInput) -> bool {
-    input.attrs.iter().any(|attr| {
-        matches!(attr.style, AttrStyle::Outer)
-            && attr.path.is_ident("repr")
-            && attr.tokens.clone().into_iter().any(|token_tree| {
-                let group = match token_tree {
-                    TokenTree::Group(group) => group,
-                    _ => return false,
-                };
-                if group.delimiter() != Delimiter::Parenthesis {
-                    return false;
+    let mut repr_c = false;
+
+    for attr in &input.attrs {
+        if attr.path().is_ident("repr") {
+            let _ = attr.parse_nested_meta(|meta| {
+                if meta.path.is_ident("C") {
+                    repr_c = true;
                 }
 
-                group.stream().into_iter().any(|token_tree| {
-                    if let TokenTree::Ident(ident) = token_tree {
-                        ident == "C"
-                    } else {
-                        false
-                    }
-                })
-            })
-    })
+                Ok(())
+            });
+        }
+    }
+
+    repr_c
 }
 
 pub(crate) struct ElementFieldInfo<'a> {
@@ -164,7 +158,7 @@ pub(crate) fn parse_element_field(field: &Field) -> Option<ElementFieldInfo> {
     const SUPPORTED_TYPES: &[&str] = &["NtListEntry", "NtSingleListEntry"];
 
     let ident = &field.ident.as_ref()?;
-    let is_boxed = field.attrs.iter().any(|attr| attr.path.is_ident("boxed"));
+    let is_boxed = field.attrs.iter().any(|attr| attr.path().is_ident("boxed"));
 
     // Get the last segment of the type path and check it against the type name.
     // This isn't 100% accurate, we may catch similarly named types that are not ours.
