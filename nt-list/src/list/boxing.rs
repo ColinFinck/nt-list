@@ -8,7 +8,7 @@ use core::ptr;
 use alloc::boxed::Box;
 use moveit::{new, New};
 
-use super::base::{Iter, IterMut, NtListHead};
+use super::base::{Iter, IterMut, NtListEntry, NtListHead};
 use super::traits::NtList;
 use crate::traits::{NtBoxedListElement, NtListElement, NtTypedList};
 
@@ -84,8 +84,8 @@ where
     ///
     /// Unlike [`NtListHead::clear`], this operation computes in *O*(*n*) time, because it
     /// needs to traverse all elements to deallocate them.
-    pub fn clear(self: Pin<&mut Self>) {
-        let end_marker = self.as_ref().inner().end_marker();
+    pub fn clear(mut self: Pin<&mut Self>) {
+        let end_marker = self.as_mut().inner_mut().end_marker_mut();
 
         // Get the link to the first element before it's being reset.
         let mut current = self.0.flink;
@@ -105,7 +105,7 @@ where
         // Traverse the list in the old-fashioned way and deallocate each element.
         while current != end_marker {
             unsafe {
-                let element = (*current).containing_record_mut();
+                let element = NtListEntry::containing_record_mut(current);
                 current = (*current).flink;
                 drop(Box::from_raw(element));
             }
@@ -271,7 +271,7 @@ where
     where
         T: IntoIterator<Item = Box<E>>,
     {
-        let end_marker = self.as_ref().inner().end_marker();
+        let end_marker = self.as_mut().inner_mut().end_marker_mut();
         let mut previous = self.as_ref().inner().blink;
 
         for element in iter.into_iter() {
@@ -369,6 +369,74 @@ mod tests {
         assert_eq!(list1.as_ref().len(), 0);
 
         verify_all_links(list3.as_ref().inner());
+    }
+
+    #[test]
+    fn test_clear_and_append() {
+        // Append two lists of equal size.
+        moveit! {
+            let mut list1 = NtBoxingListHead::<MyElement, MyList>::new();
+            let mut list2 = NtBoxingListHead::<MyElement, MyList>::new();
+        }
+
+        for i in 0..10 {
+            list1.as_mut().push_back(MyElement::new(i));
+            list2.as_mut().push_back(MyElement::new(i));
+        }
+
+        list1.as_mut().append(list2.as_mut());
+
+        assert_eq!(list1.as_ref().len(), 20);
+        assert_eq!(list2.as_ref().len(), 0);
+
+        for (i, element) in (0..10).chain(0..10).zip(list1.as_ref().iter()) {
+            assert_eq!(i, element.value);
+        }
+
+        verify_all_links(list1.as_ref().inner());
+
+        // Add more elements to both lists
+        list1.as_mut().push_back(MyElement::new(21));
+        list1.as_mut().push_front(MyElement::new(22));
+
+        list2.as_mut().push_back(MyElement::new(21));
+        list2.as_mut().push_front(MyElement::new(22));
+
+        // Append the final list to a cleared list.
+        moveit! {
+            let mut list3 = NtBoxingListHead::<MyElement, MyList>::new();
+        }
+
+        list3.as_mut().clear();
+        list3.as_mut().append(list1.as_mut());
+
+        assert_eq!(list3.as_ref().len(), 22);
+        assert_eq!(list1.as_ref().len(), 0);
+
+        verify_all_links(list3.as_ref().inner());
+    }
+
+    #[test]
+    fn test_clear_and_push() {
+        moveit! {
+            let mut list = NtBoxingListHead::<MyElement, MyList>::new();
+        }
+
+        list.as_mut().clear();
+
+        for i in 0..=3 {
+            list.as_mut().push_back(MyElement::new(i));
+        }
+        for i in 4..=6 {
+            list.as_mut().push_front(MyElement::new(i));
+        }
+
+        assert_eq!(list.as_ref().back().unwrap().value, 3);
+        assert_eq!(list.as_mut().back_mut().unwrap().value, 3);
+        assert_eq!(list.as_ref().front().unwrap().value, 6);
+        assert_eq!(list.as_mut().front_mut().unwrap().value, 6);
+
+        verify_all_links(list.as_ref().inner());
     }
 
     #[test]

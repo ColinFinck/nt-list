@@ -60,14 +60,14 @@ where
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn front(&self) -> Option<&E> {
-        (!self.is_empty()).then(|| (*self.next).containing_record())
+        (!self.is_empty()).then(|| NtSingleListEntry::containing_record(self.next))
     }
 
     /// Provides a mutable reference to the first element, or `None` if the list is empty.
     ///
     /// This operation computes in *O*(*1*) time.
     pub unsafe fn front_mut(&mut self) -> Option<&mut E> {
-        (!self.is_empty()).then(|| (*self.next).containing_record_mut())
+        (!self.is_empty()).then(|| NtSingleListEntry::containing_record_mut(self.next))
     }
 
     /// Returns `true` if the list is empty.
@@ -109,9 +109,9 @@ where
     /// [`PopEntryList`]: https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-popentrylist
     pub unsafe fn pop_front(&mut self) -> Option<&mut E> {
         (!self.is_empty()).then(|| {
-            let entry = &mut *self.next;
-            self.next = entry.next;
-            entry.containing_record_mut()
+            let entry = self.next;
+            self.next = (*entry).next;
+            NtSingleListEntry::containing_record_mut(entry)
         })
     }
 
@@ -144,7 +144,7 @@ where
         let mut current = self.next;
 
         while !current.is_null() {
-            let element = (*current).containing_record_mut();
+            let element = NtSingleListEntry::containing_record_mut(current);
 
             if f(element) {
                 previous = current;
@@ -190,9 +190,9 @@ where
             None
         } else {
             unsafe {
-                let element = (*self.current).containing_record();
+                let element_ptr = self.current;
                 self.current = (*self.current).next;
-                Some(element)
+                Some(NtSingleListEntry::<E, L>::containing_record(element_ptr))
             }
         }
     }
@@ -228,9 +228,9 @@ where
             None
         } else {
             unsafe {
-                let element = (*self.current).containing_record_mut();
+                let element_ptr = self.current;
                 self.current = (*self.current).next;
-                Some(element)
+                Some(NtSingleListEntry::containing_record_mut(element_ptr))
             }
         }
     }
@@ -264,21 +264,18 @@ where
         }
     }
 
-    pub(crate) fn containing_record(&self) -> &E {
-        unsafe { &*self.element_ptr() }
-    }
-
-    pub(crate) fn containing_record_mut(&mut self) -> &mut E {
-        unsafe { &mut *(self.element_ptr() as *mut E) }
-    }
-
-    fn element_ptr(&self) -> *const E {
-        let ptr = self as *const Self;
-
+    pub(crate) unsafe fn containing_record<'a>(ptr: *const Self) -> &'a E {
         // This is the canonical implementation of `byte_sub`
-        let ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
+        let element_ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
 
-        ptr.cast()
+        unsafe { &*element_ptr.cast() }
+    }
+
+    pub(crate) unsafe fn containing_record_mut<'a>(ptr: *mut Self) -> &'a mut E {
+        // This is the canonical implementation of `byte_sub`
+        let element_ptr = unsafe { ptr.cast::<u8>().sub(E::offset()).cast::<Self>() };
+
+        unsafe { &mut *element_ptr.cast() }
     }
 }
 
