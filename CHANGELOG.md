@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.3.0] - 2023-10-19
+- Upgraded dependencies, with major upgrades for `moveit` (to 0.6.x) and `syn` (to 2.x)
+- Upgraded to `resolver = "2"` in the top-level `Cargo.toml`
+
 ## [0.2.1] - 2023-10-19
 - Fixed Tree Borrows and Stacked Borrows violations when running `cargo miri` (#6, #7)
 
