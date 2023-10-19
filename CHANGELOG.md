@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.2.1] - 2023-10-19
+- Fixed Tree Borrows and Stacked Borrows violations when running `cargo miri` (#6, #7)
+
 ## [0.2.0] - 2022-10-27
 - Fixed double-drop when a Drop handler of an element panics during `clear`
 - Added an `Extend` implementation for `NtBoxingListHead`
